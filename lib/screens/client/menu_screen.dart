@@ -57,7 +57,7 @@ class ClientMenuScreen extends StatelessWidget {
             flexibleSpace: FlexibleSpaceBar(
               title: const Text('The Manor'),
               background: Image.network(
-                'https://picsum.photos/seed/restaurant/800/400',
+                'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=600',
                 fit: BoxFit.cover,
               ),
             ),
