@@ -22,7 +22,7 @@ class RestaurantMenuApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: '/',
+      initialRoute: '/menu',
       routes: {
         '/': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
@@ -32,7 +32,7 @@ class RestaurantMenuApp extends StatelessWidget {
         '/analytics': (context) => AnalyticsScreen(),
         '/settings': (context) => SettingsScreen(),
         '/menu': (context) => ClientMenuScreen(),
-        '/product_detail': (context) => ProductDetailScreen(),
+
       },
     );
   }
