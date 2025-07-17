@@ -8,6 +8,9 @@ import 'screens/manager/analytics_screen.dart';
 import 'screens/manager/settings_screen.dart';
 import 'screens/client/menu_screen.dart';
 import 'screens/client/product_detail_screen.dart';
+import 'screens/manager/qr_generator_screen.dart';
+
+
 
 void main() {
   runApp(RestaurantMenuApp());
@@ -32,6 +35,7 @@ class RestaurantMenuApp extends StatelessWidget {
         '/analytics': (context) => AnalyticsScreen(),
         '/settings': (context) => SettingsScreen(),
         '/menu': (context) => ClientMenuScreen(),
+        '/qr': (context) => QRGeneratorScreen(),
 
       },
     );

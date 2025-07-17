@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.smart_menu"
+    namespace "com.example.smart_menu"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

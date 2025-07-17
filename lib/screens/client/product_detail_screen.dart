@@ -6,10 +6,10 @@ class ProductDetailScreen extends StatelessWidget {
   final String title;
 
   const ProductDetailScreen({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +42,8 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
+            const Padding(
+              padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -53,14 +53,14 @@ class ProductDetailScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'CROCHETE CU SUNCA SI TRUFE',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const Text(
+                      Text(
                         '200g',
                         style: TextStyle(
                           color: Colors.white70,
@@ -69,32 +69,32 @@ class ProductDetailScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     '(alergeni: gluten, lapte, ouă/gluten, milk, eggs)',
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Crochete 180g, sos aioli 20g',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'EN: Croquettes, aioli sauce',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  SizedBox(height: 16),
+                  Text(
                     '32 RON',
                     style: TextStyle(
                       color: Colors.white,

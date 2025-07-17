@@ -55,7 +55,7 @@ class ClientMenuScreen extends StatelessWidget {
             expandedHeight: 200,
             backgroundColor: Colors.black,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text('The Manor'),
+              title: const Text('The Manor', style: TextStyle(color: Colors.white),),
               background: Image.network(
                 'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=600',
                 fit: BoxFit.cover,
