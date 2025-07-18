@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -15,20 +15,12 @@ db = firestore.client()
 
 def firebase_register(email, password):
     url = f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}'
-    payload = {
-        'email': email,
-        'password': password,
-        'returnSecureToken': True
-    }
+    payload = {'email': email, 'password': password, 'returnSecureToken': True}
     return requests.post(url, json=payload)
 
 def firebase_login(email, password):
     url = f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}'
-    payload = {
-        'email': email,
-        'password': password,
-        'returnSecureToken': True
-    }
+    payload = {'email': email, 'password': password, 'returnSecureToken': True}
     return requests.post(url, json=payload)
 
 @app.post('/api/register')
@@ -38,10 +30,8 @@ async def register(request: Request):
     password = data.get('password')
     if not email or not password:
         return JSONResponse({'status': 'error', 'message': 'Email și parolă lipsesc'}, status_code=400)
-
     resp = firebase_register(email, password)
     resp_json = resp.json()
-
     if resp.status_code == 200:
         uid = resp_json['localId']
         db.collection('users').document(uid).set({
@@ -64,7 +54,6 @@ async def login(request: Request):
     password = data.get('password')
     if not email or not password:
         return JSONResponse({'status': 'error', 'message': 'Email și parolă lipsesc'}, status_code=400)
-
     resp = firebase_login(email, password)
     resp_json = resp.json()
     if resp.status_code == 200:
@@ -82,6 +71,39 @@ async def login(request: Request):
         elif msg == 'INVALID_PASSWORD':
             return JSONResponse({'status': 'error', 'message': 'Parolă greșită'}, status_code=401)
         return JSONResponse({'status': 'error', 'message': msg}, status_code=400)
+
+@app.get('/api/users')
+def get_all_users():
+    users_ref = db.collection('users').stream()
+    users = [doc.to_dict() for doc in users_ref]
+    return {'users': users}
+
+@app.get('/api/users/{uid}')
+def get_user(uid: str):
+    doc = db.collection('users').document(uid).get()
+    if doc.exists:
+        return doc.to_dict()
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+
+@app.put('/api/users/{uid}')
+async def update_user(uid: str, request: Request):
+    data = await request.json()
+    doc_ref = db.collection('users').document(uid)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    doc_ref.update(data)
+    return {"status": "success", "message": "User updated"}
+
+@app.delete('/api/users/{uid}')
+def delete_user(uid: str):
+    doc_ref = db.collection('users').document(uid)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    doc_ref.delete()
+    return {"status": "success", "message": "User deleted"}
 
 @app.get('/api/test')
 def test():
