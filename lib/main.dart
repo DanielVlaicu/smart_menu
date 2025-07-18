@@ -7,7 +7,6 @@ import 'screens/manager/edit_item_screen.dart';
 import 'screens/manager/analytics_screen.dart';
 import 'screens/manager/settings_screen.dart';
 import 'screens/client/menu_screen.dart';
-import 'screens/client/product_detail_screen.dart';
 import 'screens/manager/qr_generator_screen.dart';
 
 
