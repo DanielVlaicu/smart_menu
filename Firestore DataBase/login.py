@@ -7,8 +7,7 @@ import os
 
 app = FastAPI()
 
-# Înlocuiește cu cheia ta (sau folosește os.environ pentru variabile de mediu la deploy)
-FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY', 'AIzaSyCs_juCMfwm3kZZ3I7GV18lYD6oJP4M8H4')
+FIREBASE_API_KEY = os.environ.get('FIREBASE_API_KEY')
 
 cred = credentials.Certificate('serviceAccountKey.json')
 firebase_admin.initialize_app(cred)
