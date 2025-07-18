@@ -1,33 +1,89 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 import firebase_admin
-from firebase_admin import credentials, auth, firestore
+from firebase_admin import credentials, firestore
+import requests
+import os
 
-app = Flask(__name__)
+app = FastAPI()
+
+# Înlocuiește cu cheia ta (sau folosește os.environ pentru variabile de mediu la deploy)
+FIREBASE_API_KEY = os.getenv('FIREBASE_API_KEY', 'AIzaSyCs_juCMfwm3kZZ3I7GV18lYD6oJP4M8H4')
 
 cred = credentials.Certificate('serviceAccountKey.json')
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-@app.route('/api/save_user', methods=['POST'])
-def save_user():
-    data = request.get_json()
-    id_token = data.get('id_token')
-    try:
-        decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token['uid']
-        email = decoded_token.get('email', '')
-        name = decoded_token.get('name', '')
+def firebase_register(email, password):
+    url = f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}'
+    payload = {
+        'email': email,
+        'password': password,
+        'returnSecureToken': True
+    }
+    return requests.post(url, json=payload)
 
+def firebase_login(email, password):
+    url = f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}'
+    payload = {
+        'email': email,
+        'password': password,
+        'returnSecureToken': True
+    }
+    return requests.post(url, json=payload)
+
+@app.post('/api/register')
+async def register(request: Request):
+    data = await request.json()
+    email = data.get('email')
+    password = data.get('password')
+    if not email or not password:
+        return JSONResponse({'status': 'error', 'message': 'Email și parolă lipsesc'}, status_code=400)
+
+    resp = firebase_register(email, password)
+    resp_json = resp.json()
+
+    if resp.status_code == 200:
+        uid = resp_json['localId']
         db.collection('users').document(uid).set({
             'uid': uid,
             'email': email,
-            'name': name,
+            'registered_at': firestore.SERVER_TIMESTAMP,
+            'last_login': firestore.SERVER_TIMESTAMP
+        })
+        return JSONResponse({'status': 'success', 'message': 'Cont creat cu succes!', 'uid': uid})
+    else:
+        msg = resp_json.get('error', {}).get('message', 'Unknown error')
+        if msg == 'EMAIL_EXISTS':
+            return JSONResponse({'status': 'error', 'message': 'Email deja folosit'}, status_code=409)
+        return JSONResponse({'status': 'error', 'message': msg}, status_code=400)
+
+@app.post('/api/login')
+async def login(request: Request):
+    data = await request.json()
+    email = data.get('email')
+    password = data.get('password')
+    if not email or not password:
+        return JSONResponse({'status': 'error', 'message': 'Email și parolă lipsesc'}, status_code=400)
+
+    resp = firebase_login(email, password)
+    resp_json = resp.json()
+    if resp.status_code == 200:
+        uid = resp_json['localId']
+        db.collection('users').document(uid).set({
+            'uid': uid,
+            'email': email,
             'last_login': firestore.SERVER_TIMESTAMP
         }, merge=True)
+        return JSONResponse({'status': 'success', 'message': 'Login reușit!', 'uid': uid})
+    else:
+        msg = resp_json.get('error', {}).get('message', 'Unknown error')
+        if msg == 'EMAIL_NOT_FOUND':
+            return JSONResponse({'status': 'error', 'message': 'Cont inexistent.'}, status_code=404)
+        elif msg == 'INVALID_PASSWORD':
+            return JSONResponse({'status': 'error', 'message': 'Parolă greșită'}, status_code=401)
+        return JSONResponse({'status': 'error', 'message': msg}, status_code=400)
 
-        return jsonify({'status': 'success', 'uid': uid})
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 400
-
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.get('/api/test')
+def test():
+    return {"msg": "Backend FastAPI+Firestore merge!"}
