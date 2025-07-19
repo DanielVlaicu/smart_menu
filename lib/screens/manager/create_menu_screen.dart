@@ -171,15 +171,20 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
+      body: ReorderableListView(
+        onReorder: (oldIndex, newIndex) {
+          setState(() {
+            if (newIndex > oldIndex) newIndex--;
+            final item = categories.removeAt(oldIndex);
+            categories.insert(newIndex, item);
+          });
+        },
+        children: List.generate(categories.length, (index) {
           final category = categories[index];
-          return Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          return Card(
+            key: ValueKey(category),
+            color: Colors.grey[900],
             child: ExpansionTile(
-              backgroundColor: Colors.grey[900],
-              collapsedBackgroundColor: Colors.grey[900],
               title: Row(
                 children: [
                   Expanded(
@@ -200,65 +205,96 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
                 ],
               ),
               children: [
-                for (int subIndex = 0; subIndex < category.subcategories.length; subIndex++)
-                  Theme(
-                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                    child: ExpansionTile(
-                      title: Row(
+                ReorderableListView(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  onReorder: (oldSub, newSub) {
+                    setState(() {
+                      if (newSub > oldSub) newSub--;
+                      final item = category.subcategories.removeAt(oldSub);
+                      category.subcategories.insert(newSub, item);
+                    });
+                  },
+                  children: List.generate(category.subcategories.length, (subIndex) {
+                    final sub = category.subcategories[subIndex];
+                    return Card(
+                      key: ValueKey(sub),
+                      color: Colors.grey[850],
+                      child: ExpansionTile(
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(sub.name, style: const TextStyle(color: Colors.white)),
+                            ),
+                            Switch(
+                              value: sub.active,
+                              onChanged: (val) => setState(() => sub.active = val),
+                              activeColor: Colors.white,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.more_vert, color: Colors.white),
+                              onPressed: () => _showOptionsDialog(
+                                    () => _showEditDialog('Editează Subcategorie', sub.name, (val) => setState(() => sub.name = val)),
+                                    () => setState(() => category.subcategories.removeAt(subIndex)),
+                              ),
+                            ),
+                          ],
+                        ),
                         children: [
-                          Expanded(
-                            child: Text(category.subcategories[subIndex].name, style: const TextStyle(color: Colors.white)),
+                          ReorderableListView(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            onReorder: (oldProd, newProd) {
+                              setState(() {
+                                if (newProd > oldProd) newProd--;
+                                final item = sub.products.removeAt(oldProd);
+                                sub.products.insert(newProd, item);
+                              });
+                            },
+                            children: List.generate(sub.products.length, (pIndex) {
+                              final product = sub.products[pIndex];
+                              return ListTile(
+                                key: ValueKey(product),
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(product.image, width: 50, height: 50, fit: BoxFit.cover),
+                                ),
+                                title: Text(product.name, style: const TextStyle(color: Colors.white)),
+                                subtitle: Text('${product.weight}, ${product.price.toStringAsFixed(2)} RON', style: const TextStyle(color: Colors.white70)),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Switch(
+                                      value: product.active,
+                                      onChanged: (val) => setState(() => product.active = val),
+                                      activeColor: Colors.white,
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.more_vert, color: Colors.white),
+                                      onPressed: () => _showOptionsDialog(
+                                            () => _showEditProductDialog(product),
+                                            () => setState(() => sub.products.removeAt(pIndex)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
                           ),
-                          Switch(
-                            value: category.subcategories[subIndex].active,
-                            onChanged: (val) => setState(() => category.subcategories[subIndex].active = val),
-                            activeColor: Colors.white,
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.more_vert, color: Colors.white),
-                            onPressed: () => _showOptionsDialog(
-                                  () => _showEditDialog('Editează Subcategorie', category.subcategories[subIndex].name,
-                                      (val) => setState(() => category.subcategories[subIndex].name = val)),
-                                  () => setState(() => category.subcategories.removeAt(subIndex)),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ElevatedButton(
+                              onPressed: () => _addProduct(index, subIndex),
+                              child: const Text('+ Adaugă produs'),
                             ),
                           ),
                         ],
                       ),
-                      children: [
-                        ...category.subcategories[subIndex].products.map((product) => ListTile(
-                          leading: Image.network(product.image, width: 50, height: 50, fit: BoxFit.cover),
-                          title: Text(product.name, style: const TextStyle(color: Colors.white)),
-                          subtitle: Text('${product.weight}, ${product.price.toStringAsFixed(2)} RON', style: const TextStyle(color: Colors.white70)),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Switch(
-                                value: product.active,
-                                onChanged: (val) => setState(() => product.active = val),
-                                activeColor: Colors.white,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.more_vert, color: Colors.white),
-                                onPressed: () => _showOptionsDialog(
-                                      () => _showEditProductDialog(product),
-                                      () => setState(() => category.subcategories[subIndex].products.remove(product)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ElevatedButton(
-                            onPressed: () => _addProduct(index, subIndex),
-                            child: const Text('+ Adaugă produs'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                    );
+                  }),
+                ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
                     onPressed: () => _addSubcategory(index),
                     child: const Text('+ Adaugă subcategorie'),
@@ -267,7 +303,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
               ],
             ),
           );
-        },
+        }),
       ),
     );
   }
