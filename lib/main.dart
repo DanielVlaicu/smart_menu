@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -10,15 +11,15 @@ import 'screens/manager/settings_screen.dart';
 import 'screens/client/menu_screen.dart';
 import 'screens/manager/qr_generator_screen.dart';
 
-
-
-void main()  async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(RestaurantMenuApp());
+  runApp(const RestaurantMenuApp());
 }
 
 class RestaurantMenuApp extends StatelessWidget {
+  const RestaurantMenuApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -27,18 +28,17 @@ class RestaurantMenuApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: '/menu',
+      initialRoute: FirebaseAuth.instance.currentUser == null ? '/' : '/dashboard',
       routes: {
-        '/': (context) => LoginScreen(),
-        '/register': (context) => RegisterScreen(),
+        '/': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
         '/dashboard': (context) => DashboardScreen(),
         '/create_menu': (context) => CreateMenuScreen(),
         '/edit_item': (context) => EditItemScreen(),
         '/analytics': (context) => AnalyticsScreen(),
         '/settings': (context) => SettingsScreen(),
-        '/menu': (context) => ClientMenuScreen(),
+        '/menu': (context) => const ClientMenuScreen(),
         '/qr': (context) => QRGeneratorScreen(),
-
       },
     );
   }

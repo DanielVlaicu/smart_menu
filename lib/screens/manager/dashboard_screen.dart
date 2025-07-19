@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+
+import '../../services/auth_service.dart';
+
 class DashboardScreen extends StatelessWidget {
   final List<Map<String, dynamic>> options = [
     {'icon': Icons.menu_book, 'label': 'Creează Meniu', 'route': '/create_menu'},
@@ -12,7 +15,18 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Panou Manager')),
+      appBar: AppBar(
+        title: const Text('Panou Manager'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService().signOut();
+              Navigator.pushReplacementNamed(context, '/');
+            },
+          ),
+        ],
+      ),
       backgroundColor: Colors.black,
       body: GridView.count(
         crossAxisCount: 2,
