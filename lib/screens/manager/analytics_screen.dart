@@ -3,14 +3,16 @@ import 'package:fl_chart/fl_chart.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   final List<FlSpot> accessData = [
-    FlSpot(0, 2),
-    FlSpot(1, 5),
-    FlSpot(2, 4),
-    FlSpot(3, 8),
-    FlSpot(4, 3),
-    FlSpot(5, 7),
-    FlSpot(6, 6),
+    const FlSpot(0, 2),
+    const FlSpot(1, 5),
+    const FlSpot(2, 4),
+    const FlSpot(3, 8),
+    const FlSpot(4, 3),
+    const FlSpot(5, 7),
+    const FlSpot(6, 6),
   ];
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,7 @@ class AnalyticsScreen extends StatelessWidget {
         child: LineChart(
           LineChartData(
             titlesData: FlTitlesData(
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true)),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -30,7 +32,7 @@ class AnalyticsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            gridData: FlGridData(show: true),
+            gridData: const FlGridData(show: true),
             borderData: FlBorderData(show: false),
             lineBarsData: [
               LineChartBarData(
@@ -38,7 +40,7 @@ class AnalyticsScreen extends StatelessWidget {
                 isCurved: true,
                 color: Colors.blue,
                 barWidth: 3,
-                dotData: FlDotData(show: false),
+                dotData: const FlDotData(show: false),
               ),
             ],
           ),

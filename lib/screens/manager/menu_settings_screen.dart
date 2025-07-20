@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 
 class MenuSettingsScreen extends StatelessWidget {
+  const MenuSettingsScreen({super.key});
+
   void _showLayoutPopup(BuildContext context) {
     showDialog(
       context: context,

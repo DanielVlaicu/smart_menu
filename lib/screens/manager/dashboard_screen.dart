@@ -10,6 +10,8 @@ class DashboardScreen extends StatelessWidget {
     {'icon': Icons.menu_book, 'label': 'Meniul clinntului', 'route': '/menu'},
   ];
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

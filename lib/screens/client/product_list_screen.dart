@@ -24,7 +24,7 @@ class ProductListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: Text('$subcategory'), backgroundColor: Colors.black),
+      appBar: AppBar(title: Text(subcategory), backgroundColor: Colors.black),
       body: ListView.builder(
         itemCount: dummyProducts.length,
         itemBuilder: (context, index) {
