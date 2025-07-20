@@ -65,7 +65,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
         content: TextField(
           controller: controller,
           style: TextStyle(color: Colors.white),
-          decoration: InputDecoration(hintText: 'Introduceți \$label', hintStyle: TextStyle(color: Colors.white54)),
+          decoration: InputDecoration(hintText: '-', hintStyle: TextStyle(color: Colors.white54)),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('Anulează')),
