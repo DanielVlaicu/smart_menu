@@ -54,8 +54,8 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
     }
   }
 
-  Future<String> _showInputDialog(String label) async {
-    final controller = TextEditingController();
+  Future<String> _showInputDialog(String label, {String initialValue = ''}) async {
+    final controller = TextEditingController(text: initialValue);
     String result = '';
     await showDialog(
       context: context,
@@ -65,7 +65,7 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
         content: TextField(
           controller: controller,
           style: TextStyle(color: Colors.white),
-          decoration: InputDecoration(hintText: 'Introduceți $label', hintStyle: TextStyle(color: Colors.white54)),
+          decoration: InputDecoration(hintText: 'Introduceți \$label', hintStyle: TextStyle(color: Colors.white54)),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('Anulează')),
@@ -104,8 +104,9 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
           )
         ],
       ),
-      body: ReorderableListView(
+      body: ReorderableListView.builder(
         padding: EdgeInsets.symmetric(vertical: 12),
+        itemCount: categories.length,
         onReorder: (oldIdx, newIdx) {
           setState(() {
             if (newIdx > oldIdx) newIdx--;
@@ -113,112 +114,158 @@ class _CreateMenuScreenState extends State<CreateMenuScreen> {
             categories.insert(newIdx, item);
           });
         },
-        children: [
-          for (int c = 0; c < categories.length; c++)
-            Card(
-              key: ValueKey(categories[c]),
-              color: Colors.grey[900],
-              child: ExpansionTile(
-                leading: Image.file(File(categories[c].image), width: 45, height: 45, fit: BoxFit.cover),
-                title: Text(categories[c].name, style: TextStyle(color: Colors.white)),
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Switch(value: categories[c].active, onChanged: (val) => setState(() => categories[c].active = val), activeColor: themeBlue),
-                  PopupMenuButton<String>(
-                    color: Colors.grey[800],
-                    icon: Icon(Icons.more_vert, color: Colors.white),
-                    onSelected: (val) async {
-                      if (val == 'rename') {
-                        String newName = await _showInputDialog('Categorie');
-                        if (newName.isNotEmpty) setState(() => categories[c].name = newName);
-                      } else if (val == 'photo') {
-                        String img = await _pickImage();
-                        if (img.isNotEmpty) setState(() => categories[c].image = img);
-                      } else if (val == 'delete') {
-                        setState(() => categories.removeAt(c));
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      PopupMenuItem(value: 'rename', child: Text('Schimbă numele')),
-                      PopupMenuItem(value: 'photo', child: Text('Schimbă poza')),
-                      PopupMenuItem(value: 'delete', child: Text('Șterge')),
-                    ],
-                  )
-                ]),
-                children: [
-                  ReorderableListView(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    onReorder: (oldIdx, newIdx) {
-                      setState(() {
-                        if (newIdx > oldIdx) newIdx--;
-                        final sub = categories[c].subcategories.removeAt(oldIdx);
-                        categories[c].subcategories.insert(newIdx, sub);
-                      });
-                    },
-                    children: [
-                      for (int s = 0; s < categories[c].subcategories.length; s++)
-                        Card(
-                          key: ValueKey(categories[c].subcategories[s]),
-                          color: Colors.black,
-                          child: ExpansionTile(
-                            leading: Image.file(File(categories[c].subcategories[s].image), width: 40, height: 40, fit: BoxFit.cover),
-                            title: Text(categories[c].subcategories[s].name, style: TextStyle(color: Colors.white)),
-                            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                              Switch(value: categories[c].subcategories[s].active, onChanged: (val) => setState(() => categories[c].subcategories[s].active = val), activeColor: themeBlue),
-                              PopupMenuButton<String>(
-                                color: Colors.grey[800],
-                                icon: Icon(Icons.more_vert, color: Colors.white),
-                                onSelected: (val) async {
-                                  if (val == 'rename') {
-                                    String newName = await _showInputDialog('Subcategorie');
-                                    if (newName.isNotEmpty) setState(() => categories[c].subcategories[s].name = newName);
-                                  } else if (val == 'photo') {
-                                    String img = await _pickImage();
-                                    if (img.isNotEmpty) setState(() => categories[c].subcategories[s].image = img);
-                                  } else if (val == 'delete') {
-                                    setState(() => categories[c].subcategories.removeAt(s));
-                                  }
-                                },
-                                itemBuilder: (_) => [
-                                  PopupMenuItem(value: 'rename', child: Text('Schimbă numele')),
-                                  PopupMenuItem(value: 'photo', child: Text('Schimbă poza')),
-                                  PopupMenuItem(value: 'delete', child: Text('Șterge')),
-                                ],
-                              )
-                            ]),
+        itemBuilder: (context, c) {
+          return Card(
+            key: ValueKey(categories[c]),
+            color: Colors.black,
+            elevation: 0,
+            child: ExpansionTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(File(categories[c].image), width: 55, height: 55, fit: BoxFit.cover),
+              ),
+              title: Text(categories[c].name, style: TextStyle(color: Colors.white)),
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                Switch(value: categories[c].active, onChanged: (val) => setState(() => categories[c].active = val), activeColor: themeBlue),
+                PopupMenuButton<String>(
+                  color: Colors.grey[800],
+                  icon: Icon(Icons.more_vert, color: Colors.white),
+                  onSelected: (val) async {
+                    if (val == 'rename') {
+                      String newName = await _showInputDialog('Categorie', initialValue: categories[c].name);
+                      if (newName.isNotEmpty) setState(() => categories[c].name = newName);
+                    } else if (val == 'photo') {
+                      String img = await _pickImage();
+                      if (img.isNotEmpty) setState(() => categories[c].image = img);
+                    } else if (val == 'delete') {
+                      setState(() => categories.removeAt(c));
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'rename', child: Text('Schimbă numele')),
+                    PopupMenuItem(value: 'photo', child: Text('Schimbă poza')),
+                    PopupMenuItem(value: 'delete', child: Text('Șterge')),
+                  ],
+                )
+              ]),
+              children: [
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: categories[c].subcategories.length,
+                  onReorder: (oldIdx, newIdx) {
+                    setState(() {
+                      if (newIdx > oldIdx) newIdx--;
+                      final sub = categories[c].subcategories.removeAt(oldIdx);
+                      categories[c].subcategories.insert(newIdx, sub);
+                    });
+                  },
+                  itemBuilder: (context, s) {
+                    return Card(
+                      key: ValueKey(categories[c].subcategories[s]),
+                      color: Colors.black,
+                      elevation: 0,
+                      child: ExpansionTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(File(categories[c].subcategories[s].image), width: 45, height: 45, fit: BoxFit.cover),
+                        ),
+                        title: Text(categories[c].subcategories[s].name, style: TextStyle(color: Colors.white)),
+                        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Switch(value: categories[c].subcategories[s].active, onChanged: (val) => setState(() => categories[c].subcategories[s].active = val), activeColor: themeBlue),
+                          PopupMenuButton<String>(
+                            color: Colors.grey[800],
+                            icon: Icon(Icons.more_vert, color: Colors.white),
+                            onSelected: (val) async {
+                              if (val == 'rename') {
+                                String newName = await _showInputDialog('Subcategorie', initialValue: categories[c].subcategories[s].name);
+                                if (newName.isNotEmpty) setState(() => categories[c].subcategories[s].name = newName);
+                              } else if (val == 'photo') {
+                                String img = await _pickImage();
+                                if (img.isNotEmpty) setState(() => categories[c].subcategories[s].image = img);
+                              } else if (val == 'delete') {
+                                setState(() => categories[c].subcategories.removeAt(s));
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              PopupMenuItem(value: 'rename', child: Text('Schimbă numele')),
+                              PopupMenuItem(value: 'photo', child: Text('Schimbă poza')),
+                              PopupMenuItem(value: 'delete', child: Text('Șterge')),
+                            ],
+                          )
+                        ]),
+                        children: [
+                          ReorderableListView(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            onReorder: (oldIdx, newIdx) {
+                              setState(() {
+                                if (newIdx > oldIdx) newIdx--;
+                                final item = categories[c].subcategories[s].products.removeAt(oldIdx);
+                                categories[c].subcategories[s].products.insert(newIdx, item);
+                              });
+                            },
                             children: [
-                              ReorderableListView(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                onReorder: (oldIdx, newIdx) {
-                                  setState(() {
-                                    if (newIdx > oldIdx) newIdx--;
-                                    final item = categories[c].subcategories[s].products.removeAt(oldIdx);
-                                    categories[c].subcategories[s].products.insert(newIdx, item);
-                                  });
-                                },
-                                children: [
-                                  for (int p = 0; p < categories[c].subcategories[s].products.length; p++)
-                                    ListTile(
-                                      key: ValueKey(categories[c].subcategories[s].products[p]),
-                                      leading: Image.file(File(categories[c].subcategories[s].products[p].image), width: 40, height: 40, fit: BoxFit.cover),
-                                      title: Text(categories[c].subcategories[s].products[p].name, style: TextStyle(color: Colors.white)),
-                                      subtitle: Text('${categories[c].subcategories[s].products[p].weight}, ${categories[c].subcategories[s].products[p].price.toStringAsFixed(2)} RON', style: TextStyle(color: Colors.white70)),
-                                      trailing: Switch(value: categories[c].subcategories[s].products[p].active, onChanged: (val) => setState(() => categories[c].subcategories[s].products[p].active = val), activeColor: themeBlue),
-                                    ),
-                                ],
-                              ),
-                              TextButton(onPressed: () => _addProduct(c, s), child: Text('+ Adaugă produs', style: TextStyle(color: themeBlue)))
+                              for (int p = 0; p < categories[c].subcategories[s].products.length; p++)
+                                ListTile(
+                                  key: ValueKey(categories[c].subcategories[s].products[p]),
+                                  leading: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(File(categories[c].subcategories[s].products[p].image), width: 40, height: 40, fit: BoxFit.cover),
+                                  ),
+                                  title: Text(categories[c].subcategories[s].products[p].name, style: TextStyle(color: Colors.white)),
+                                  subtitle: Text('${categories[c].subcategories[s].products[p].weight}, ${categories[c].subcategories[s].products[p].price.toStringAsFixed(2)} RON', style: TextStyle(color: Colors.white70)),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Switch(
+                                          value: categories[c].subcategories[s].products[p].active,
+                                          onChanged: (val) => setState(() => categories[c].subcategories[s].products[p].active = val),
+                                          activeColor: themeBlue),
+                                      PopupMenuButton<String>(
+                                        color: Colors.grey[800],
+                                        icon: Icon(Icons.more_vert, color: Colors.white),
+                                        onSelected: (val) async {
+                                          if (val == 'edit') {
+                                            String newName = await _showInputDialog('Nume produs', initialValue: categories[c].subcategories[s].products[p].name);
+                                            String newDesc = await _showInputDialog('Descriere', initialValue: categories[c].subcategories[s].products[p].description);
+                                            String newWeight = await _showInputDialog('Gramaj', initialValue: categories[c].subcategories[s].products[p].weight);
+                                            String newPrice = await _showInputDialog('Preț', initialValue: categories[c].subcategories[s].products[p].price.toString());
+                                            setState(() {
+                                              categories[c].subcategories[s].products[p].name = newName;
+                                              categories[c].subcategories[s].products[p].description = newDesc;
+                                              categories[c].subcategories[s].products[p].weight = newWeight;
+                                              categories[c].subcategories[s].products[p].price = double.tryParse(newPrice) ?? 0.0;
+                                            });
+                                          } else if (val == 'photo') {
+                                            String newImg = await _pickImage();
+                                            if (newImg.isNotEmpty) setState(() => categories[c].subcategories[s].products[p].image = newImg);
+                                          } else if (val == 'delete') {
+                                            setState(() => categories[c].subcategories[s].products.removeAt(p));
+                                          }
+                                        },
+                                        itemBuilder: (_) => [
+                                          PopupMenuItem(value: 'edit', child: Text('Modifică date')),
+                                          PopupMenuItem(value: 'photo', child: Text('Schimbă poza')),
+                                          PopupMenuItem(value: 'delete', child: Text('Șterge')),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
-                        ),
-                    ],
-                  ),
-                  TextButton(onPressed: () => _addSubcategory(c), child: Text('+ Adaugă subcategorie', style: TextStyle(color: themeBlue)))
-                ],
-              ),
+                          TextButton(onPressed: () => _addProduct(c, s), child: Text('+ Adaugă produs', style: TextStyle(color: themeBlue)))
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                TextButton(onPressed: () => _addSubcategory(c), child: Text('+ Adaugă subcategorie', style: TextStyle(color: themeBlue)))
+              ],
             ),
-        ],
+          );
+        },
       ),
     );
   }
