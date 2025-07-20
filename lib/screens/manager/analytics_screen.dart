@@ -34,6 +34,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildChartForDay(DateTime day) {
     final data = accessDataPerDay[day]!;
     final dateLabel = DateFormat('dd MMM yyyy').format(day);
+    final maxY = data.map((e) => e.y).reduce((a, b) => a > b ? a : b) + 2;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,35 +47,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
         ),
         SizedBox(
-          height: 220,
+          height: 240,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: 1200, // Asta îți permite spațiere largă între ore
+              width: 1200,
               child: LineChart(
-
                 LineChartData(
                   minX: 0,
                   maxX: 23,
                   minY: 0,
-                  // Adaugă padding suplimentar pentru a nu tăia partea de sus
-                  lineTouchData: LineTouchData(
-                    enabled: true,
-                    touchTooltipData: LineTouchTooltipData(
-                      tooltipBgColor: Colors.blueGrey.shade700,
-                      tooltipRoundedRadius: 8,
-                      fitInsideHorizontally: true,
-                      fitInsideVertically: true,
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((spot) {
-                          return LineTooltipItem(
-                            'Ora ${spot.x.toInt()}: ${spot.y.toInt()} accesări',
-                            const TextStyle(color: Colors.white, fontSize: 12),
-                          );
-                        }).toList();
-                      },
-                    ),
-                  ),
+                  maxY: maxY,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
@@ -88,6 +71,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         interval: 1,
+                        reservedSize: 32,
                         getTitlesWidget: (value, _) => Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: Text('${value.toInt()}', style: const TextStyle(color: Colors.white70, fontSize: 10)),
@@ -114,7 +98,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       bottom: BorderSide(color: Colors.white30),
                     ),
                   ),
-                  clipData: FlClipData.all(), // Previne desenarea peste margini
                   lineBarsData: [
                     LineChartBarData(
                       spots: data,
@@ -131,6 +114,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
                     )
                   ],
+                  lineTouchData: LineTouchData(
+                    enabled: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      tooltipBgColor: Colors.blueGrey.shade700,
+                      tooltipRoundedRadius: 8,
+                      fitInsideVertically: true,
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          return LineTooltipItem(
+                            'Ora ${spot.x.toInt()}: ${spot.y.toInt()} accesări',
+                            const TextStyle(color: Colors.white, fontSize: 12),
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),

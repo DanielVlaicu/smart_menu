@@ -7,16 +7,41 @@ class AccountSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Setări Cont'), backgroundColor: Colors.black),
+      appBar: AppBar(
+        title: const Text('Setări Cont'),
+        backgroundColor: Colors.black,
+      ),
       backgroundColor: Colors.black,
       body: ListView(
+        padding: const EdgeInsets.all(12),
         children: [
-          ListTile(title: const Text('Update Username', style: TextStyle(color: Colors.white)), onTap: () {}),
-          ListTile(title: const Text('Change Password', style: TextStyle(color: Colors.white)), onTap: () {}),
-          ListTile(title: const Text('Delete My Account', style: TextStyle(color: Colors.white)), onTap: () {}),
-          ListTile(title: const Text('View Subscription', style: TextStyle(color: Colors.white)), onTap: () {}),
-          ListTile(title: const Text('Logout', style: TextStyle(color: Colors.white)), onTap: () => AuthService().signOut()),
+          _settingTile(Icons.person, 'Update Username'),
+          _settingTile(Icons.lock, 'Change Password'),
+          _settingTile(Icons.delete, 'Delete My Account'),
+          _settingTile(Icons.subscriptions, 'View Subscription'),
+          Card(
+            color: Colors.red[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: ListTile(
+              leading: const Icon(Icons.logout, color: Colors.white),
+              title: const Text('Logout', style: TextStyle(color: Colors.white)),
+              onTap: () => AuthService().signOut(),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _settingTile(IconData icon, String label) {
+    return Card(
+      color: Colors.grey[900],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.white70),
+        title: Text(label, style: const TextStyle(color: Colors.white)),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white54),
+        onTap: () {}, // TODO: implement
       ),
     );
   }
