@@ -255,4 +255,3 @@ class Product {
   bool active;
   Product({required this.name, required this.description, required this.weight, required this.price, required this.image, required this.active});
 }
-
