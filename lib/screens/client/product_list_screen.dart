@@ -9,14 +9,24 @@ class ProductListScreen extends StatelessWidget {
 
   final List<Map<String, String>> dummyProducts = const [
     {
-      'title': 'Ouă Benedict',
-      'description': 'Ouă poșate cu sos hollandaise',
-      'image': 'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg',
+      'title': 'Antricot de vita',
+      'description': 'Antricot fraged de vită Black Angus, servit cu legume la grătar și sos de piper verde.',
+      'image': 'https://images.pexels.com/photos/1639563/pexels-photo-1639563.jpeg',
     },
     {
-      'title': 'Clătite Americane',
-      'description': 'Clătite pufoase cu sirop de arțar',
-      'image': 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg',
+      'title': 'Vită Stroganoff',
+      'description': 'Fâșii de mușchi de vită în sos cremos de smântână si ciuperci, servite cu legume.',
+      'image': 'https://images.pexels.com/photos/28503619/pexels-photo-28503619.jpeg',
+    },
+    {
+      'title': 'Mușchi de vită Wellington',
+      'description': 'Mușchi fraged de vită învelit în aluat foietaj cu ciuperci și foie gras, servit cu sos brun.',
+      'image': 'https://images.pexels.com/photos/20095444/pexels-photo-20095444.jpeg',
+    },
+    {
+      'title': 'Tocană de vită',
+      'description': 'Carne de vită gătită lent în sos bogat de paprika, cu cartofi natur și ceapă caramelizată.',
+      'image': 'https://images.pexels.com/photos/17872670/pexels-photo-17872670.jpeg',
     },
   ];
 

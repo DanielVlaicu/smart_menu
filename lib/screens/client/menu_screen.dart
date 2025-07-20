@@ -15,23 +15,23 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
   final List<Map<String, String>> categories = [
     {
       'title': 'Mic Dejun',
-      'image': 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&h=200',
+      'image': 'https://images.pexels.com/photos/101533/pexels-photo-101533.jpeg',
     },
     {
       'title': 'Supa',
-      'image': 'https://images.pexels.com/photos/5949881/pexels-photo-5949881.jpeg?auto=compress&cs=tinysrgb&h=200',
+      'image': 'https://images.pexels.com/photos/724667/pexels-photo-724667.jpeg',
     },
     {
-      'title': 'Starter Rece',
-      'image': 'https://images.pexels.com/photos/4958673/pexels-photo-4958673.jpeg?auto=compress&cs=tinysrgb&h=200',
+      'title': 'Fel Principal',
+      'image': 'https://images.pexels.com/photos/1307658/pexels-photo-1307658.jpeg',
     },
     {
       'title': 'Desert',
-      'image': 'https://images.pexels.com/photos/3026808/pexels-photo-3026808.jpeg?auto=compress&cs=tinysrgb&h=200',
+      'image': 'https://images.pexels.com/photos/2273823/pexels-photo-2273823.jpeg',
     },
     {
       'title': 'Bauturi',
-      'image': 'https://images.pexels.com/photos/5532349/pexels-photo-5532349.jpeg?auto=compress&cs=tinysrgb&h=200',
+      'image': 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg',
     },
   ];
 
@@ -45,45 +45,75 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
         'title': 'Clătite',
         'image': 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg',
       },
-      {
-        'title': 'Omletă',
-        'image': 'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg',
-      },
-      {
-        'title': 'Omletă',
-        'image': 'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg',
-      },
-      {
-        'title': 'Omletă',
-        'image': 'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg',
-      },
     ],
     'Supa': [
       {
-        'title': 'Supă de pui',
-        'image': 'https://images.pexels.com/photos/5949881/pexels-photo-5949881.jpeg',
-      },
-      {
         'title': 'Supă cremă',
-        'image': 'https://images.pexels.com/photos/6408315/pexels-photo-6408315.jpeg',
+        'image': 'https://images.pexels.com/photos/1277483/pexels-photo-1277483.jpeg',
       },
-    ],
-    'Starter Rece': [
       {
-        'title': 'Bruschette',
-        'image': 'https://images.pexels.com/photos/1580466/pexels-photo-1580466.jpeg',
+        'title': 'Supă vita',
+        'image': 'https://images.pexels.com/photos/6646068/pexels-photo-6646068.jpeg',
+      },
+      {
+        'title': 'Supă pui',
+        'image': 'https://images.pexels.com/photos/2532442/pexels-photo-2532442.jpeg',
       },
     ],
+    'Fel Principal': [
+      {
+        'title': 'Vita',
+        'image': 'https://images.pexels.com/photos/10749578/pexels-photo-10749578.jpeg',
+      },
+      {
+        'title': 'Peste',
+        'image': 'https://images.pexels.com/photos/725991/pexels-photo-725991.jpeg',
+      },
+      {
+        'title': 'Rata',
+        'image': 'https://images.pexels.com/photos/8697525/pexels-photo-8697525.jpeg',
+      },
+
+      {
+        'title': 'Burger',
+        'image': 'https://images.pexels.com/photos/2983098/pexels-photo-2983098.jpeg',
+      },
+      {
+        'title': 'Pui',
+        'image': 'https://images.pexels.com/photos/616354/pexels-photo-616354.jpeg',
+      },
+      {
+        'title': 'Vegetarian',
+        'image': 'https://images.pexels.com/photos/1152237/pexels-photo-1152237.jpeg',
+      },
+    ],
+
     'Desert': [
       {
         'title': 'Tiramisu',
-        'image': 'https://images.pexels.com/photos/3026808/pexels-photo-3026808.jpeg',
+        'image': 'https://images.pexels.com/photos/8784720/pexels-photo-8784720.jpeg',
+      },
+      {
+        'title': 'Placinta',
+        'image': 'https://images.pexels.com/photos/3065590/pexels-photo-3065590.jpeg',
+      },
+      {
+        'title': 'Tarta',
+        'image': 'https://images.pexels.com/photos/461431/pexels-photo-461431.jpeg',
       },
     ],
     'Bauturi': [
       {
         'title': 'Espresso',
-        'image': 'https://images.pexels.com/photos/374885/pexels-photo-374885.jpeg',
+        'image': 'https://images.pexels.com/photos/685527/pexels-photo-685527.jpeg',
+      },
+      {
+        'title': 'Bere',
+        'image': 'https://images.pexels.com/photos/667986/pexels-photo-667986.jpeg',
+      },
+      {
+        'title': 'Vin',
+        'image': 'https://images.pexels.com/photos/1123260/pexels-photo-1123260.jpeg',
       },
     ],
   };
