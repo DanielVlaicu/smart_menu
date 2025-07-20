@@ -1,45 +1,23 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:ui';
-
+import 'package:share_plus/share_plus.dart';
 
 class QRGeneratorScreen extends StatelessWidget {
   final String qrData = 'https://smartmenu.app/restaurant-id-123';
+  final Color themeBlue = const Color(0xFFB8D8F8);
 
   const QRGeneratorScreen({super.key});
 
-  Future<Uint8List> _generatePdf() async {
-    final pdf = pw.Document();
-    final qrImage = await QrPainter(
-      data: qrData,
-      version: QrVersions.auto,
-      gapless: true,
-    ).toImageData(300);
-
-    final bytes = qrImage!.buffer.asUint8List();
-
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) =>
-            pw.Center(child: pw.Image(pw.MemoryImage(bytes))),
-      ),
-    );
-
-    return pdf.save();
-  }
-
-  Future<void> _saveAsPdf() async {
-    final status = await Permission.storage.request();
-    if (!status.isGranted) return;
-
+  Future<File> _generatePngFile() async {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
-    final size = const Size(300, 300);
+    const size = Size(300, 300);
 
     final qrPainter = QrPainter(
       data: qrData,
@@ -48,36 +26,103 @@ class QRGeneratorScreen extends StatelessWidget {
     );
 
     qrPainter.paint(canvas, size);
-
     final picture = recorder.endRecording();
     final img = await picture.toImage(300, 300);
     final byteData = await img.toByteData(format: ImageByteFormat.png);
     final pngBytes = byteData!.buffer.asUint8List();
 
-    final dir = await getExternalStorageDirectory();
-    final file = File('${dir!.path}/qr_code.png');
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/qr_code.png');
     await file.writeAsBytes(pngBytes);
+    return file;
+  }
 
-    debugPrint('PNG salvat la: ${file.path}');
+  Future<void> _saveAsPng(BuildContext context) async {
+    final status = await Permission.storage.request();
+    if (!status.isGranted) return;
+
+    final file = await _generatePngFile();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('PNG salvat la: ${file.path}')),
+    );
+  }
+
+  Future<void> _saveAsPdf(BuildContext context) async {
+    final status = await Permission.storage.request();
+    if (!status.isGranted) return;
+
+    final qrImage = await QrPainter(
+      data: qrData,
+      version: QrVersions.auto,
+      gapless: true,
+    ).toImageData(300);
+
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) => pw.Center(
+          child: pw.Image(pw.MemoryImage(qrImage!.buffer.asUint8List())),
+        ),
+      ),
+    );
+
+    final dir = await getExternalStorageDirectory();
+    final file = File('${dir!.path}/qr_code.pdf');
+    await file.writeAsBytes(await pdf.save());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('PDF salvat la: ${file.path}')),
+    );
+  }
+
+  Future<void> _shareQrCode(BuildContext context) async {
+    final file = await _generatePngFile();
+    await Share.shareXFiles([XFile(file.path)], text: 'Scanează codul QR pentru acces rapid la meniu!');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Generează Cod QR'), backgroundColor: Colors.black),
+      appBar: AppBar(
+        title: const Text('Generează Cod QR', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.black,
+      ),
       backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            QrImageView(data: qrData, size: 200),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _saveAsPdf, child: const Text('Salvează ca PDF')),
-            ElevatedButton(onPressed: () {
-              // TODO: PNG export
-            }, child: const Text('Salvează ca PNG')),
-          ],
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              QrImageView(
+                data: qrData,
+                size: 220,
+                backgroundColor: Colors.white,
+              ),
+              const SizedBox(height: 24),
+              _buildButton(context, Icons.picture_as_pdf, 'Salvează ca PDF', () => _saveAsPdf(context)),
+              const SizedBox(height: 12),
+              _buildButton(context, Icons.image_outlined, 'Salvează ca PNG', () => _saveAsPng(context)),
+              const SizedBox(height: 12),
+              _buildButton(context, Icons.share, 'Partajează Codul', () => _shareQrCode(context)),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildButton(BuildContext context, IconData icon, String text, VoidCallback onPressed) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(text),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: themeBlue,
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
