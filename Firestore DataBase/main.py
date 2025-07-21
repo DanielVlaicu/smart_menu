@@ -1,39 +1,55 @@
+# main.py
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from firebase_admin import auth, firestore
-from firebase_config import init_firebase
 from fastapi.middleware.cors import CORSMiddleware
+from firebase_admin import auth, credentials, initialize_app, firestore
+from pydantic import BaseModel
 
-init_firebase()
 app = FastAPI()
-db = firestore.client()
 
+# Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Poți restricționa doar la domeniul tău Flutter web / mobil
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class User(BaseModel):
+# Initialize Firebase Admin SDK
+try:
+    cred = credentials.Certificate("firebase_config.json")
+    initialize_app(cred)
+    db = firestore.client()
+except Exception as e:
+    print(f"Firebase init error: {e}")
+
+class AuthRequest(BaseModel):
     email: str
     password: str
 
-@app.post("/register")
-def register(user: User):
+class RegisterRequest(AuthRequest):
+    name: str | None = None
+
+@app.post("/api/register")
+def register(request: RegisterRequest):
     try:
-        user_record = auth.create_user(
-            email=user.email,
-            password=user.password
+        user = auth.create_user(
+            email=request.email,
+            password=request.password
         )
 
-        db.collection('users').document(user_record.uid).set({
-            'email': user.email,
-            'created_at': firestore.SERVER_TIMESTAMP,
-            'role': 'user'
-        })
+        user_data = {
+            "email": request.email,
+            "uid": user.uid,
+            "name": request.name or "",
+            "role": "user"
+        }
+        db.collection("users").document(user.uid).set(user_data)
 
-        return {"success": True, "uid": user_record.uid}
+        return {"status": "success", "uid": user.uid}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/login")
+def login(_):
+    raise HTTPException(status_code=501, detail="Login via backend not supported. Use Firebase client SDK.")
