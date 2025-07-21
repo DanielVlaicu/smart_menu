@@ -4,6 +4,6 @@ import json
 import os
 
 def init_firebase():
-    service_account_info = json.loads(os.environ["FIREBASE_KEY"])
+    service_account_info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
     cred = credentials.Certificate(service_account_info)
     firebase_admin.initialize_app(cred)
