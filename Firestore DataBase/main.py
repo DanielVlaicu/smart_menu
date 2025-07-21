@@ -1,24 +1,22 @@
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, Depends
-from auth import verify_token
-from database import db
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from firebase_admin import auth
+from firebase_config import init_firebase
 
 app = FastAPI()
+init_firebase()
 
-# Activează CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # sau doar frontend-ul tău
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-@app.get("/")
-def root():
-    return {"message": "API is running 🚀"}
+class User(BaseModel):
+    email: str
+    password: str
 
-@app.get("/users")
-async def get_users(user_data=Depends(verify_token)):
-    users_ref = db.collection("users")
-    docs = users_ref.stream()
-    return [{**doc.to_dict(), "id": doc.id} for doc in docs]
+@app.post("/register")
+def register(user: User):
+    try:
+        user_record = auth.create_user(
+            email=user.email,
+            password=user.password
+        )
+        return {"success": True, "uid": user_record.uid}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
