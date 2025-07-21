@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_menu/screens/client/menu_screen2.dart';
 import 'package:smart_menu/screens/manager/account_settings_screen.dart';
 import 'package:smart_menu/screens/manager/menu_settings_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -42,7 +43,7 @@ class RestaurantMenuApp extends StatelessWidget {
         '/account_settings': (context) => const AccountSettingsScreen(),
         '/menu_settings': (context) => const MenuSettingsScreen(),
         '/menu': (context) => const ClientMenuScreen(),
-        '/menu2': (context) => const ClientMenuScreen(),
+        '/menu2': (context) => const ClientMenuScreen2(),
         '/qr': (context) => QRGeneratorScreen(),
       },
     );
