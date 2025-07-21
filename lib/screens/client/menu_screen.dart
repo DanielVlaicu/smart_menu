@@ -15,23 +15,23 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
   final List<Map<String, String>> categories = [
     {
       'title': 'Mic Dejun',
-      'image': 'https://images.pexels.com/photos/101533/pexels-photo-101533.jpeg',
+      'image': 'https://images.pexels.com/photos/101533/pexels-photo-101533.jpeg?auto=compress&cs=tinysrgb&h=200',
     },
     {
       'title': 'Supa',
-      'image': 'https://images.pexels.com/photos/724667/pexels-photo-724667.jpeg',
+      'image': 'https://images.pexels.com/photos/724667/pexels-photo-724667.jpeg?auto=compress&cs=tinysrgb&h=200',
     },
     {
       'title': 'Fel Principal',
-      'image': 'https://images.pexels.com/photos/1307658/pexels-photo-1307658.jpeg',
+      'image': 'https://images.pexels.com/photos/1307658/pexels-photo-1307658.jpeg?auto=compress&cs=tinysrgb&h=200',
     },
     {
       'title': 'Desert',
-      'image': 'https://images.pexels.com/photos/2273823/pexels-photo-2273823.jpeg',
+      'image': 'https://images.pexels.com/photos/2273823/pexels-photo-2273823.jpeg?auto=compress&cs=tinysrgb&h=200',
     },
     {
       'title': 'Bauturi',
-      'image': 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg',
+      'image': 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&h=200',
     },
   ];
 
@@ -39,81 +39,81 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
     'Mic Dejun': [
       {
         'title': 'Omletă',
-        'image': 'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg',
+        'image': 'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Clătite',
-        'image': 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg',
+        'image': 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
     ],
     'Supa': [
       {
         'title': 'Supă cremă',
-        'image': 'https://images.pexels.com/photos/1277483/pexels-photo-1277483.jpeg',
+        'image': 'https://images.pexels.com/photos/1277483/pexels-photo-1277483.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Supă vita',
-        'image': 'https://images.pexels.com/photos/6646068/pexels-photo-6646068.jpeg',
+        'image': 'https://images.pexels.com/photos/6646068/pexels-photo-6646068.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Supă pui',
-        'image': 'https://images.pexels.com/photos/2532442/pexels-photo-2532442.jpeg',
+        'image': 'https://images.pexels.com/photos/2532442/pexels-photo-2532442.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
     ],
     'Fel Principal': [
       {
         'title': 'Vita',
-        'image': 'https://images.pexels.com/photos/10749578/pexels-photo-10749578.jpeg',
+        'image': 'https://images.pexels.com/photos/10749578/pexels-photo-10749578.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Peste',
-        'image': 'https://images.pexels.com/photos/725991/pexels-photo-725991.jpeg',
+        'image': 'https://images.pexels.com/photos/725991/pexels-photo-725991.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Rata',
-        'image': 'https://images.pexels.com/photos/8697525/pexels-photo-8697525.jpeg',
+        'image': 'https://images.pexels.com/photos/8697525/pexels-photo-8697525.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
 
       {
         'title': 'Burger',
-        'image': 'https://images.pexels.com/photos/2983098/pexels-photo-2983098.jpeg',
+        'image': 'https://images.pexels.com/photos/2983098/pexels-photo-2983098.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Pui',
-        'image': 'https://images.pexels.com/photos/616354/pexels-photo-616354.jpeg',
+        'image': 'https://images.pexels.com/photos/616354/pexels-photo-616354.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Vegetarian',
-        'image': 'https://images.pexels.com/photos/1152237/pexels-photo-1152237.jpeg',
+        'image': 'https://images.pexels.com/photos/1152237/pexels-photo-1152237.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
     ],
 
     'Desert': [
       {
         'title': 'Tiramisu',
-        'image': 'https://images.pexels.com/photos/8784720/pexels-photo-8784720.jpeg',
+        'image': 'https://images.pexels.com/photos/8784720/pexels-photo-8784720.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Placinta',
-        'image': 'https://images.pexels.com/photos/3065590/pexels-photo-3065590.jpeg',
+        'image': 'https://images.pexels.com/photos/3065590/pexels-photo-3065590.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Tarta',
-        'image': 'https://images.pexels.com/photos/461431/pexels-photo-461431.jpeg',
+        'image': 'https://images.pexels.com/photos/461431/pexels-photo-461431.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
     ],
     'Bauturi': [
       {
         'title': 'Espresso',
-        'image': 'https://images.pexels.com/photos/685527/pexels-photo-685527.jpeg',
+        'image': 'https://images.pexels.com/photos/685527/pexels-photo-685527.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Bere',
-        'image': 'https://images.pexels.com/photos/667986/pexels-photo-667986.jpeg',
+        'image': 'https://images.pexels.com/photos/667986/pexels-photo-667986.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
       {
         'title': 'Vin',
-        'image': 'https://images.pexels.com/photos/1123260/pexels-photo-1123260.jpeg',
+        'image': 'https://images.pexels.com/photos/1123260/pexels-photo-1123260.jpeg?auto=compress&cs=tinysrgb&h=600',
       },
     ],
   };
@@ -135,7 +135,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
             flexibleSpace: FlexibleSpaceBar(
               title: const Text('The Manor', style: TextStyle(color: Colors.white)),
               background: Image.network(
-                'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=600',
+                'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
                 fit: BoxFit.cover,
               ),
             ),

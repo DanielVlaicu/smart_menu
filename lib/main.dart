@@ -42,6 +42,7 @@ class RestaurantMenuApp extends StatelessWidget {
         '/account_settings': (context) => const AccountSettingsScreen(),
         '/menu_settings': (context) => const MenuSettingsScreen(),
         '/menu': (context) => const ClientMenuScreen(),
+        '/menu2': (context) => const ClientMenuScreen(),
         '/qr': (context) => QRGeneratorScreen(),
       },
     );

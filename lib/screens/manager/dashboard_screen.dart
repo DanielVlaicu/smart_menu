@@ -8,6 +8,7 @@ class DashboardScreen extends StatelessWidget {
     {'icon': Icons.bar_chart, 'label': 'Statistici', 'route': '/analytics'},
     {'icon': Icons.settings, 'label': 'Setări', 'route': '/settings'},
     {'icon': Icons.menu_book, 'label': 'Meniul clinntului', 'route': '/menu'},
+    {'icon': Icons.menu_book, 'label': 'Meniul clinntului 2', 'route': '/menu2'},
   ];
 
 
