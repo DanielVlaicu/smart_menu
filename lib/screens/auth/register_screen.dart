@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -24,31 +22,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('https://smartmenu-production.up.railway.app/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': emailController.text.trim(),
-          'password': passController.text.trim(),
-        }),
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passController.text.trim(),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-            email: emailController.text.trim(),
-            password: passController.text.trim(),
-          );
-          Navigator.pushReplacementNamed(context, '/dashboard');
-        } else {
-          setState(() => errorMessage = 'Înregistrarea a eșuat');
-        }
-      } else {
-        setState(() => errorMessage = 'Eroare: ${response.body}');
+      if (userCredential.user != null) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
       }
+    } on FirebaseAuthException catch (e) {
+      setState(() => errorMessage = _firebaseErrorMessage(e));
     } catch (e) {
-      setState(() => errorMessage = 'Eroare rețea: $e');
+      setState(() => errorMessage = 'A apărut o eroare: $e');
+    }
+  }
+
+  String _firebaseErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'Acest email este deja folosit.';
+      case 'invalid-email':
+        return 'Email invalid.';
+      case 'weak-password':
+        return 'Parola este prea slabă.';
+      default:
+        return 'Eroare: ${e.message}';
     }
   }
 
@@ -98,7 +97,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String label, bool obscure = false}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    bool obscure = false,
+  }) {
     return TextField(
       controller: controller,
       obscureText: obscure,

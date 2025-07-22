@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
+import 'package:smart_menu/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,6 +25,17 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       setState(() {
         errorMessage = 'Autentificare eșuată. Verifică datele.';
+      });
+    }
+  }
+
+  Future<void> handleGoogleLogin() async {
+    final user = await AuthService().signInWithGoogle();
+    if (user != null) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else {
+      setState(() {
+        errorMessage = 'Autentificarea cu Google a eșuat.';
       });
     }
   }
@@ -56,6 +67,21 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               child: const Text('Autentificare'),
             ),
+            const SizedBox(height: 12),
+
+            // Google login button
+            ElevatedButton.icon(
+              icon: const Icon(Icons.login),
+              label: const Text("Autentificare cu Google"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: handleGoogleLogin,
+            ),
+
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => Navigator.pushNamed(context, '/register'),

@@ -14,6 +14,7 @@ import 'screens/manager/settings_screen.dart';
 import 'screens/client/menu_screen.dart';
 import 'screens/manager/qr_generator_screen.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
