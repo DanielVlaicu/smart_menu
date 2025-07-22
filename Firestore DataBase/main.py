@@ -1,39 +1,32 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from firebase_admin import auth, firestore
-from firebase_config import init_firebase
 from fastapi.middleware.cors import CORSMiddleware
 
-init_firebase()
 app = FastAPI()
-db = firestore.client()
 
+# Permite CORS pentru Flutter app
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Poți restricționa doar la domeniul tău Flutter web / mobil
+    allow_origins=["*"],  # Sau setează URL-ul tău Flutter web dacă ai
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class User(BaseModel):
+# Model pentru request-uri de login/register
+class UserRequest(BaseModel):
     email: str
     password: str
 
-@app.post("/register")
-def register(user: User):
-    try:
-        user_record = auth.create_user(
-            email=user.email,
-            password=user.password
-        )
+@app.get("/")
+def home():
+    return {"message": "API merge ✅"}
 
-        db.collection('users').document(user_record.uid).set({
-            'email': user.email,
-            'created_at': firestore.SERVER_TIMESTAMP,
-            'role': 'user'
-        })
+@app.post("/api/register")
+def register(user: UserRequest):
+    # Aici ai putea salva în Firestore sau face logica ta
+    return {"status": "success", "email": user.email}
 
-        return {"success": True, "uid": user_record.uid}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+@app.post("/api/echo")
+def echo(user: UserRequest):
+    return {"echoed": user.dict()}
