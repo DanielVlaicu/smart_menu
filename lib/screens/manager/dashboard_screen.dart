@@ -3,7 +3,7 @@ import '../../services/auth_service.dart';
 
 class DashboardScreen extends StatelessWidget {
   final List<Map<String, dynamic>> options = [
-    {'icon': Icons.menu_book, 'label': 'Creeaza Meniu', 'route': '/create_menu'},
+    {'icon': Icons.menu_book, 'label': 'Creeaza Meniu', 'route': '/manager_menu_screen'},
     {'icon': Icons.qr_code_2, 'label': 'Generează QR', 'route': '/qr'},
     {'icon': Icons.bar_chart, 'label': 'Statistici', 'route': '/analytics'},
     {'icon': Icons.settings, 'label': 'Setări', 'route': '/settings'},
