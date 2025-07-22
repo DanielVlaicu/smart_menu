@@ -2,37 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
+import '../../models/category.dart';
+import '../../models/subcategory.dart';
+import '../../services/api_services.dart';
 import '../manager/manager_product_list_screen.dart';
 
 class ManagerMenuScreen extends StatefulWidget {
   const ManagerMenuScreen({super.key});
 
   @override
-  State<ManagerMenuScreen> createState() => _ManagerMenuScreen();
+  State<ManagerMenuScreen> createState() => _ManagerMenuScreenState();
 }
 
-class _ManagerMenuScreen extends State<ManagerMenuScreen> {
+class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   int selectedCategoryIndex = 0;
+  List<Category> categories = [];
+  List<Subcategory> currentSubcategories = [];
 
-  final List<Map<String, String>> categories = [
-    {
-      'title': 'Mic Dejun',
-      'image':
-      'https://images.pexels.com/photos/101533/pexels-photo-101533.jpeg?auto=compress&cs=tinysrgb&h=200',
-      'visible': 'true',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
 
-  final Map<String, List<Map<String, String>>> subcategories = {
-    'Mic Dejun': [
-      {
-        'title': 'Omletă',
-        'image':
-        'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg?auto=compress&cs=tinysrgb&h=600',
-        'visible': 'true',
-      },
-    ],
-  };
+  Future<void> _loadCategories() async {
+    try {
+      final result = await ApiService.getCategories();
+      setState(() {
+        categories = result.map((e) => Category.fromJson(e)).toList();
+      });
+      if (categories.isNotEmpty) {
+        _loadSubcategories(categories[selectedCategoryIndex].id);
+      }
+    } catch (e) {
+      print('Eroare la categorii: \$e');
+    }
+  }
+
+  Future<void> _loadSubcategories(String categoryId) async {
+    try {
+      final result = await ApiService.getSubcategories(categoryId);
+      setState(() {
+        currentSubcategories = result.map((e) => Subcategory.fromJson(e)).toList();
+      });
+    } catch (e) {
+      print('Eroare la subcategorii: \$e');
+    }
+  }
 
   void _addCategory() async {
     if (categories.length >= 3) return;
@@ -51,14 +67,12 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
             children: [
               TextField(
                 controller: titleController,
-                decoration:
-                const InputDecoration(labelText: 'Titlu categorie'),
+                decoration: const InputDecoration(labelText: 'Titlu categorie'),
               ),
               const SizedBox(height: 10),
               ElevatedButton.icon(
                 onPressed: () async {
-                  FilePickerResult? result = await FilePicker.platform
-                      .pickFiles(type: FileType.image);
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
                     setState(() {
                       imagePath = File(result.files.single.path!).path;
@@ -74,15 +88,14 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   const Text('Vizibil în meniu'),
                   const Spacer(),
                   StatefulBuilder(
-                    builder: (context, setInnerState) =>
-                        Switch(
-                          value: isVisible,
-                          onChanged: (val) {
-                            setInnerState(() {
-                              isVisible = val;
-                            });
-                          },
-                        ),
+                    builder: (context, setInnerState) => Switch(
+                      value: isVisible,
+                      onChanged: (val) {
+                        setInnerState(() {
+                          isVisible = val;
+                        });
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -90,15 +103,15 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 if (titleController.text.isNotEmpty && imagePath != null) {
-                  setState(() {
-                    categories.add({
-                      'title': titleController.text,
-                      'image': imagePath!,
-                      'visible': isVisible.toString(),
-                    });
-                  });
+                  final imageUrl = await ApiService.uploadImage(File(imagePath!));
+                  await ApiService.createCategory(
+                    title: titleController.text,
+                    imageUrl: imageUrl,
+                    visible: isVisible,
+                  );
+                  await _loadCategories();
                 }
                 Navigator.of(context).pop();
               },
@@ -111,10 +124,10 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
   }
 
   void _editCategory(int index) async {
-    final current = categories[index];
-    final titleController = TextEditingController(text: current['title']);
-    String? newImage = current['image'];
-    bool isVisible = current['visible'] != 'false';
+    final cat = categories[index];
+    final titleController = TextEditingController(text: cat.title);
+    String imagePath = cat.imageUrl;
+    bool isVisible = cat.visible;
 
     await showDialog(
       context: context,
@@ -131,12 +144,9 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
               const SizedBox(height: 10),
               ElevatedButton.icon(
                 onPressed: () async {
-                  FilePickerResult? result =
-                  await FilePicker.platform.pickFiles(type: FileType.image);
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
-                    setState(() {
-                      newImage = File(result.files.single.path!).path;
-                    });
+                    imagePath = File(result.files.single.path!).path;
                   }
                 },
                 icon: const Icon(Icons.image),
@@ -148,45 +158,41 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   const Text('Vizibil în meniu'),
                   const Spacer(),
                   StatefulBuilder(
-                    builder: (context, setInnerState) =>
-                        Switch(
-                          value: isVisible,
-                          onChanged: (val) {
-                            setInnerState(() => isVisible = val);
-                          },
-                        ),
+                    builder: (context, setInnerState) => Switch(
+                      value: isVisible,
+                      onChanged: (val) {
+                        setInnerState(() => isVisible = val);
+                      },
+                    ),
                   ),
                 ],
               ),
             ],
           ),
           actions: [
-            if (index != 0)
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    categories.removeAt(index);
-                    if (selectedCategoryIndex >= categories.length) {
-                      selectedCategoryIndex = categories.length - 1;
-                    }
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text(
-                    'Șterge', style: TextStyle(color: Colors.red)),
-              ),
             TextButton(
-              onPressed: () {
-                setState(() {
-                  categories[index] = {
-                    'title': titleController.text,
-                    'image': newImage ?? current['image']!,
-                    'visible': isVisible.toString(),
-                  };
-                });
+              onPressed: () async {
+                final imageUrl = imagePath.startsWith('/')
+                    ? await ApiService.uploadImage(File(imagePath))
+                    : imagePath;
+                await ApiService.updateCategory(
+                  id: cat.id,
+                  title: titleController.text,
+                  imageUrl: imageUrl,
+                  visible: isVisible,
+                );
+                await _loadCategories();
                 Navigator.of(context).pop();
               },
               child: const Text('Salvează'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await ApiService.deleteCategory(cat.id);
+                await _loadCategories();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Șterge', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -194,7 +200,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
     );
   }
 
-  void _addSubcategory(String categoryKey) async {
+  void _addSubcategory(Category category) async {
     final TextEditingController titleController = TextEditingController();
     String? imagePath;
     bool isVisible = true;
@@ -214,8 +220,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
               const SizedBox(height: 10),
               ElevatedButton.icon(
                 onPressed: () async {
-                  FilePickerResult? result =
-                  await FilePicker.platform.pickFiles(type: FileType.image);
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
                     imagePath = File(result.files.single.path!).path;
                   }
@@ -229,15 +234,14 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   const Text('Vizibil în meniu'),
                   const Spacer(),
                   StatefulBuilder(
-                    builder: (context, setInnerState) =>
-                        Switch(
-                          value: isVisible,
-                          onChanged: (val) {
-                            setInnerState(() {
-                              isVisible = val;
-                            });
-                          },
-                        ),
+                    builder: (context, setInnerState) => Switch(
+                      value: isVisible,
+                      onChanged: (val) {
+                        setInnerState(() {
+                          isVisible = val;
+                        });
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -245,16 +249,16 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 if (titleController.text.isNotEmpty && imagePath != null) {
-                  setState(() {
-                    subcategories[categoryKey] ??= [];
-                    subcategories[categoryKey]!.add({
-                      'title': titleController.text,
-                      'image': imagePath!,
-                      'visible': isVisible.toString(),
-                    });
-                  });
+                  final imageUrl = await ApiService.uploadImage(File(imagePath!));
+                  await ApiService.createSubcategory(
+                    title: titleController.text,
+                    imageUrl: imageUrl,
+                    visible: isVisible,
+                    categoryId: category.id,
+                  );
+                  await _loadSubcategories(category.id);
                 }
                 Navigator.of(context).pop();
               },
@@ -266,103 +270,23 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
     );
   }
 
-  void _editSubcategory(String categoryKey, int index) async {
-    final current = subcategories[categoryKey]![index];
-    final titleController = TextEditingController(text: current['title']);
-    String? newImage = current['image'];
-    bool isVisible = current['visible'] == 'true';
-
-    await showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text('Editează subcategoria'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Titlu'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  FilePickerResult? result =
-                  await FilePicker.platform.pickFiles(type: FileType.image);
-                  if (result != null) {
-                    newImage = File(result.files.single.path!).path;
-                  }
-                },
-                icon: const Icon(Icons.image),
-                label: const Text('Alege imagine'),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Text('Vizibil în meniu'),
-                  const Spacer(),
-                  StatefulBuilder(
-                    builder: (context, setInnerState) =>
-                        Switch(
-                          value: isVisible,
-                          onChanged: (val) {
-                            setInnerState(() {
-                              isVisible = val;
-                            });
-                          },
-                        ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            if (index != 0)
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    subcategories[categoryKey]!.removeAt(index);
-                  });
-                  Navigator.of(context).pop();
-                },
-                child:
-                const Text('Șterge', style: TextStyle(color: Colors.red)),
-              ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  subcategories[categoryKey]![index] = {
-                    'title': titleController.text,
-                    'image': newImage!,
-                    'visible': isVisible.toString(),
-                  };
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Salvează'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currentCategory = categories[selectedCategoryIndex]['title']!;
-    final items = subcategories[currentCategory] ?? [];
+    final currentCategory = categories.isNotEmpty ? categories[selectedCategoryIndex] : null;
+    final items = currentSubcategories;
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: CustomScrollView(
+      body: currentCategory == null
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
             expandedHeight: 200,
             backgroundColor: Colors.black,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                  'The Manor', style: TextStyle(color: Colors.white)),
+              title: const Text('The Manor', style: TextStyle(color: Colors.white)),
               background: Image.network(
                 'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
                 fit: BoxFit.cover,
@@ -376,6 +300,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
               selectedCategoryIndex: selectedCategoryIndex,
               onSelectCategory: (index) {
                 setState(() => selectedCategoryIndex = index);
+                _loadSubcategories(categories[index].id);
               },
               onAddCategory: _addCategory,
               onEditCategory: _editCategory,
@@ -386,8 +311,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   (context, index) {
                 if (index == 0) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: GestureDetector(
                       onTap: () => _addSubcategory(currentCategory),
                       child: Container(
@@ -406,37 +330,26 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
 
                 final item = items[index - 1];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              ProductListScreen(
-                                subcategory: item['title']!,
-                                category: currentCategory,
-                              ),
+                          builder: (_) => ManagerProductListScreen(
+                            subcategory: item.title,
+                            category: currentCategory.title,
+                          ),
                         ),
                       );
                     },
-                    onLongPress: () =>
-                        _editSubcategory(currentCategory, index - 1),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          item['image']!.startsWith('/')
-                              ? Image.file(
-                            File(item['image']!),
-                            width: double.infinity,
-                            height: 160,
-                            fit: BoxFit.cover,
-                          )
-                              : Image.network(
-                            item['image']!,
+                          Image.network(
+                            item.imageUrl,
                             width: double.infinity,
                             height: 160,
                             fit: BoxFit.cover,
@@ -451,14 +364,14 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                item['title']!,
+                                item.title,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              if (item['visible'] == 'false')
+                              if (!item.visible)
                                 const Icon(Icons.visibility_off, color: Colors.redAccent, size: 18),
                             ],
                           ),
@@ -478,7 +391,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
 }
 
 class _CategoryHeader extends SliverPersistentHeaderDelegate {
-  final List<Map<String, String>> categories;
+  final List<Category> categories;
   final int selectedCategoryIndex;
   final Function(int) onSelectCategory;
   final VoidCallback onAddCategory;
@@ -512,9 +425,7 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
                   onLongPress: () => onEditCategory(index),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: index == selectedCategoryIndex
-                          ? Colors.blue
-                          : Colors.grey[900],
+                      color: index == selectedCategoryIndex ? Colors.blue : Colors.grey[900],
                       borderRadius: BorderRadius.circular(8),
                     ),
                     padding: const EdgeInsets.all(8),
@@ -522,15 +433,8 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
-                          child: category['image']!.startsWith('/')
-                              ? Image.file(
-                            File(category['image']!),
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                          )
-                              : Image.network(
-                            category['image']!,
+                          child: Image.network(
+                            category.imageUrl,
                             width: 40,
                             height: 40,
                             fit: BoxFit.cover,
@@ -540,11 +444,11 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          category['title']!,
+                          category.title,
                           style: const TextStyle(color: Colors.white),
                         ),
                         const SizedBox(width: 4),
-                        if (category['visible'] == 'false')
+                        if (!category.visible)
                           const Icon(Icons.visibility_off, size: 16, color: Colors.red),
                       ],
                     ),
@@ -552,8 +456,6 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
                 ),
               );
             }),
-
-            // Buton de adăugare categorie
             if (categories.length < 3)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -579,9 +481,6 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
   double get maxExtent => 80;
   @override
   double get minExtent => 80;
-
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => true;
 }
-
-
