@@ -15,10 +15,10 @@ class AccountSettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          _settingTile(Icons.person, 'Update Username'),
-          _settingTile(Icons.lock, 'Change Password'),
-          _settingTile(Icons.delete, 'Delete My Account'),
-          _settingTile(Icons.subscriptions, 'View Subscription'),
+          _settingTile(Icons.person, 'Schimba Numele'),
+          _settingTile(Icons.lock, 'Schimba Parola'),
+          _settingTile(Icons.delete, 'Sterge cont'),
+          _settingTile(Icons.subscriptions, 'Subscriptie'),
           Card(
             color: Colors.red[900],
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -50,9 +50,9 @@ class MenuSettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          _settingTile(context, Icons.image, 'Change Background Image', () {}),
-          _settingTile(context, Icons.color_lens, 'Customize Theme Colors', () {}),
-          _settingTile(context, Icons.grid_view, 'Change Product Arrangement', () => _showLayoutPopup(context)),
+          _settingTile(context, Icons.image, 'Schimba imagine Background ', () {}),
+          _settingTile(context, Icons.color_lens, 'Customizeaza tema culorilor', () {}),
+          _settingTile(context, Icons.grid_view, 'Schimba aranjarea produselor', () => _showLayoutPopup(context)),
         ],
       ),
     );

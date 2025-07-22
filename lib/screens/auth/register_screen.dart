@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,15 +23,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final user = await AuthService().registerWithEmail(
-      emailController.text.trim(),
-      passController.text.trim(),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('https://smartmenu-production.up.railway.app/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': emailController.text.trim(),
+          'password': passController.text.trim(),
+        }),
+      );
 
-    if (user != null) {
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } else {
-      setState(() => errorMessage = 'Înregistrarea a eșuat');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passController.text.trim(),
+          );
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        } else {
+          setState(() => errorMessage = 'Înregistrarea a eșuat');
+        }
+      } else {
+        setState(() => errorMessage = 'Eroare: ${response.body}');
+      }
+    } catch (e) {
+      setState(() => errorMessage = 'Eroare rețea: $e');
     }
   }
 
