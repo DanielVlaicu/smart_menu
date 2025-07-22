@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
-import '../client/product_list_screen.dart';
+import '../manager/manager_product_list_screen.dart';
 
 class ManagerMenuScreen extends StatefulWidget {
   const ManagerMenuScreen({super.key});
@@ -350,10 +350,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final currentCategory = categories[selectedCategoryIndex]['title']!;
-    final items =
-        subcategories[currentCategory]
-            ?.where((e) => e['visible'] != 'false')
-            .toList() ?? [];
+    final items = subcategories[currentCategory] ?? [];
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -450,13 +447,20 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                             height: 160,
                             color: Colors.black.withOpacity(0.4),
                           ),
-                          Text(
-                            item['title']!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item['title']!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (item['visible'] == 'false')
+                                const Icon(Icons.visibility_off, color: Colors.redAccent, size: 18),
+                            ],
                           ),
                         ],
                       ),
