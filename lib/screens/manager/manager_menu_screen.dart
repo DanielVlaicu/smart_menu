@@ -19,6 +19,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
       'title': 'Mic Dejun',
       'image':
       'https://images.pexels.com/photos/101533/pexels-photo-101533.jpeg?auto=compress&cs=tinysrgb&h=200',
+      'visible': 'true',
     },
   ];
 
@@ -28,6 +29,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
         'title': 'Omletă',
         'image':
         'https://images.pexels.com/photos/704569/pexels-photo-704569.jpeg?auto=compress&cs=tinysrgb&h=600',
+        'visible': 'true',
       },
     ],
   };
@@ -37,6 +39,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
 
     final TextEditingController titleController = TextEditingController();
     String? imagePath;
+    bool isVisible = true;
 
     await showDialog(
       context: context,
@@ -65,6 +68,24 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                 icon: const Icon(Icons.image),
                 label: const Text('Alege imagine'),
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Text('Vizibil în meniu'),
+                  const Spacer(),
+                  StatefulBuilder(
+                    builder: (context, setInnerState) =>
+                        Switch(
+                          value: isVisible,
+                          onChanged: (val) {
+                            setInnerState(() {
+                              isVisible = val;
+                            });
+                          },
+                        ),
+                  ),
+                ],
+              ),
             ],
           ),
           actions: [
@@ -75,6 +96,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                     categories.add({
                       'title': titleController.text,
                       'image': imagePath!,
+                      'visible': isVisible.toString(),
                     });
                   });
                 }
@@ -92,6 +114,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
     final current = categories[index];
     final titleController = TextEditingController(text: current['title']);
     String? newImage = current['image'];
+    bool isVisible = current['visible'] != 'false';
 
     await showDialog(
       context: context,
@@ -119,6 +142,22 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                 icon: const Icon(Icons.image),
                 label: const Text('Alege imagine'),
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Text('Vizibil în meniu'),
+                  const Spacer(),
+                  StatefulBuilder(
+                    builder: (context, setInnerState) =>
+                        Switch(
+                          value: isVisible,
+                          onChanged: (val) {
+                            setInnerState(() => isVisible = val);
+                          },
+                        ),
+                  ),
+                ],
+              ),
             ],
           ),
           actions: [
@@ -133,8 +172,8 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   });
                   Navigator.of(context).pop();
                 },
-                child:
-                const Text('Șterge', style: TextStyle(color: Colors.red)),
+                child: const Text(
+                    'Șterge', style: TextStyle(color: Colors.red)),
               ),
             TextButton(
               onPressed: () {
@@ -142,6 +181,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   categories[index] = {
                     'title': titleController.text,
                     'image': newImage ?? current['image']!,
+                    'visible': isVisible.toString(),
                   };
                 });
                 Navigator.of(context).pop();
@@ -157,6 +197,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
   void _addSubcategory(String categoryKey) async {
     final TextEditingController titleController = TextEditingController();
     String? imagePath;
+    bool isVisible = true;
 
     await showDialog(
       context: context,
@@ -182,6 +223,24 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                 icon: const Icon(Icons.image),
                 label: const Text('Alege imagine'),
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Text('Vizibil în meniu'),
+                  const Spacer(),
+                  StatefulBuilder(
+                    builder: (context, setInnerState) =>
+                        Switch(
+                          value: isVisible,
+                          onChanged: (val) {
+                            setInnerState(() {
+                              isVisible = val;
+                            });
+                          },
+                        ),
+                  ),
+                ],
+              ),
             ],
           ),
           actions: [
@@ -193,6 +252,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                     subcategories[categoryKey]!.add({
                       'title': titleController.text,
                       'image': imagePath!,
+                      'visible': isVisible.toString(),
                     });
                   });
                 }
@@ -210,6 +270,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
     final current = subcategories[categoryKey]![index];
     final titleController = TextEditingController(text: current['title']);
     String? newImage = current['image'];
+    bool isVisible = current['visible'] == 'true';
 
     await showDialog(
       context: context,
@@ -235,6 +296,24 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                 icon: const Icon(Icons.image),
                 label: const Text('Alege imagine'),
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Text('Vizibil în meniu'),
+                  const Spacer(),
+                  StatefulBuilder(
+                    builder: (context, setInnerState) =>
+                        Switch(
+                          value: isVisible,
+                          onChanged: (val) {
+                            setInnerState(() {
+                              isVisible = val;
+                            });
+                          },
+                        ),
+                  ),
+                ],
+              ),
             ],
           ),
           actions: [
@@ -255,6 +334,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   subcategories[categoryKey]![index] = {
                     'title': titleController.text,
                     'image': newImage!,
+                    'visible': isVisible.toString(),
                   };
                 });
                 Navigator.of(context).pop();
@@ -270,7 +350,10 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final currentCategory = categories[selectedCategoryIndex]['title']!;
-    final items = subcategories[currentCategory] ?? [];
+    final items =
+        subcategories[currentCategory]
+            ?.where((e) => e['visible'] != 'false')
+            .toList() ?? [];
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -281,8 +364,8 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
             expandedHeight: 200,
             backgroundColor: Colors.black,
             flexibleSpace: FlexibleSpaceBar(
-              title:
-              const Text('The Manor', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                  'The Manor', style: TextStyle(color: Colors.white)),
               background: Image.network(
                 'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
                 fit: BoxFit.cover,
@@ -306,8 +389,8 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                   (context, index) {
                 if (index == 0) {
                   return Padding(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
                     child: GestureDetector(
                       onTap: () => _addSubcategory(currentCategory),
                       child: Container(
@@ -317,8 +400,7 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Center(
-                          child:
-                          Icon(Icons.add, color: Colors.white, size: 40),
+                          child: Icon(Icons.add, color: Colors.white, size: 40),
                         ),
                       ),
                     ),
@@ -327,17 +409,18 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
 
                 final item = items[index - 1];
                 return Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ProductListScreen(
-                            subcategory: item['title']!,
-                            category: currentCategory,
-                          ),
+                          builder: (_) =>
+                              ProductListScreen(
+                                subcategory: item['title']!,
+                                category: currentCategory,
+                              ),
                         ),
                       );
                     },
@@ -360,10 +443,8 @@ class _ManagerMenuScreen extends State<ManagerMenuScreen> {
                             width: double.infinity,
                             height: 160,
                             fit: BoxFit.cover,
-                            errorBuilder:
-                                (context, error, stackTrace) =>
-                            const Icon(Icons.image,
-                                color: Colors.white),
+                            errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image, color: Colors.white),
                           ),
                           Container(
                             height: 160,
@@ -408,8 +489,7 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: Colors.black,
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -450,10 +530,8 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
                             width: 40,
                             height: 40,
                             fit: BoxFit.cover,
-                            errorBuilder:
-                                (context, error, stackTrace) =>
-                            const Icon(Icons.image,
-                                color: Colors.white),
+                            errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image, color: Colors.white),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -461,12 +539,17 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
                           category['title']!,
                           style: const TextStyle(color: Colors.white),
                         ),
+                        const SizedBox(width: 4),
+                        if (category['visible'] == 'false')
+                          const Icon(Icons.visibility_off, size: 16, color: Colors.red),
                       ],
                     ),
                   ),
                 ),
               );
             }),
+
+            // Buton de adăugare categorie
             if (categories.length < 3)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -494,6 +577,7 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
   double get minExtent => 80;
 
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      true;
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => true;
 }
+
+
