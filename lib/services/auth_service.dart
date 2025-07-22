@@ -3,48 +3,70 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  Future<User?> loginWithEmail(String email, String password) async {
+  // Register with email and password + send verification email
+  Future<String?> registerWithEmail(String email, String password) async {
     try {
-      UserCredential user = await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return user.user;
-    } catch (e) {
-      print('Login error: $e');
-      return null;
-    }
-  }
-
-  Future<User?> registerWithEmail(String email, String password) async {
-    try {
-      UserCredential user = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      return user.user;
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await result.user!.sendEmailVerification();
+      return 'success';
     } catch (e) {
       print('Register error: $e');
-      return null;
+      return 'A apărut o eroare la înregistrare';
     }
   }
 
-  Future<User?> signInWithGoogle() async {
+  // Login with email and password + check verification
+  Future<String?> loginWithEmail(String email, String password) async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (result.user!.emailVerified) {
+        return 'success';
+      } else {
+        await result.user!.sendEmailVerification();
+        await _auth.signOut();
+        return 'Emailul nu este verificat. Verifică în inbox.';
+      }
+    } catch (e) {
+      print('Login error: $e');
+      return 'Email sau parolă incorecte';
+    }
+  }
+
+  // Google Sign In
+  Future<String?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
+      final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
-      final userCredential = await _auth.signInWithCredential(credential);
-      return userCredential.user;
+      UserCredential result = await _auth.signInWithCredential(credential);
+      return 'success';
     } catch (e) {
-      print('Google login error: $e');
-      return null;
+      print('Google sign-in error: $e');
+      return 'Autentificarea Google a eșuat';
     }
   }
 
+  // Reset password
+  Future<void> sendPasswordReset(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  // Logout
   Future<void> signOut() async {
     await _auth.signOut();
-    await GoogleSignIn().signOut();
+    await _googleSignIn.signOut();
   }
 }

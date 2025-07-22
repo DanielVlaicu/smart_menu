@@ -9,34 +9,25 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  String errorMessage = '';
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final authService = AuthService();
+  String error = '';
+  bool loading = false;
   final Color themeBlue = const Color(0xFFB8D8F8);
 
   Future<void> handleLogin() async {
-    final user = await AuthService().loginWithEmail(
+    setState(() => loading = true);
+    final result = await authService.loginWithEmail(
       emailController.text.trim(),
       passwordController.text.trim(),
     );
+    setState(() => loading = false);
 
-    if (user != null) {
+    if (result == 'success') {
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
-      setState(() {
-        errorMessage = 'Autentificare eșuată. Verifică datele.';
-      });
-    }
-  }
-
-  Future<void> handleGoogleLogin() async {
-    final user = await AuthService().signInWithGoogle();
-    if (user != null) {
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } else {
-      setState(() {
-        errorMessage = 'Autentificarea cu Google a eșuat.';
-      });
+      setState(() => error = result ?? 'Eroare necunoscută');
     }
   }
 
@@ -50,12 +41,14 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Bun venit în SmartMenu',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            const Text(
+              'Bine ai revenit!',
+              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 32),
-            _buildTextField(controller: emailController, label: 'Email'),
+            _textField(emailController, 'Email'),
             const SizedBox(height: 16),
-            _buildTextField(controller: passwordController, label: 'Parolă', obscure: true),
+            _textField(passwordController, 'Parola', obscure: true),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: handleLogin,
@@ -65,33 +58,57 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Autentificare'),
+              child: loading
+                  ? const CircularProgressIndicator(color: Colors.black)
+                  : const Text('Autentificare'),
             ),
             const SizedBox(height: 12),
-
-            // Google login button
-            ElevatedButton.icon(
-              icon: const Icon(Icons.login),
-              label: const Text("Autentificare cu Google"),
+            TextButton(
+              onPressed: () => Navigator.pushReplacementNamed(context, '/register'),
+              child: const Text(
+                'Nu ai cont? Creează unul',
+                style: TextStyle(color: Color(0xFFB8D8F8)),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (emailController.text.trim().isNotEmpty) {
+                  await authService.sendPasswordReset(emailController.text.trim());
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Email de resetare trimis')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Introdu un email valid pentru resetare.')),
+                  );
+                }
+              },
+              child: const Text('Am uitat parola', style: TextStyle(color: Colors.white70)),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                setState(() => loading = true);
+                final result = await authService.signInWithGoogle();
+                setState(() => loading = false);
+                if (result == 'success') {
+                  Navigator.pushReplacementNamed(context, '/dashboard');
+                } else {
+                  setState(() => error = result ?? 'Eroare Google Login');
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: handleGoogleLogin,
+              child: const Text('Autentificare cu Google'),
             ),
-
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pushNamed(context, '/register'),
-              child: const Text('Nu ai cont? Creează unul',
-                  style: TextStyle(color: Color(0xFFB8D8F8))),
-            ),
-            if (errorMessage.isNotEmpty)
+            if (error.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 16),
-                child: Text(errorMessage, style: const TextStyle(color: Colors.red)),
+                child: Text(error, style: const TextStyle(color: Colors.red)),
               ),
           ],
         ),
@@ -99,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String label, bool obscure = false}) {
+  Widget _textField(TextEditingController controller, String label, {bool obscure = false}) {
     return TextField(
       controller: controller,
       obscureText: obscure,
@@ -110,8 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
         filled: true,
         fillColor: Colors.grey[900],
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white30)),
-        focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Colors.white)),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
       ),
     );
   }
