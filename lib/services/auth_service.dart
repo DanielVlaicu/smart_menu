@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -13,6 +14,7 @@ class AuthService {
         password: password,
       );
       await result.user!.sendEmailVerification();
+      await saveUserToFirestore(result.user!);
       return 'success';
     } catch (e) {
       print('Register error: $e');
@@ -52,10 +54,26 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
       UserCredential result = await _auth.signInWithCredential(credential);
+      await saveUserToFirestore(result.user!);
       return 'success';
     } catch (e) {
       print('Google sign-in error: $e');
       return 'Autentificarea Google a eșuat';
+    }
+  }
+
+  Future<void> saveUserToFirestore(User user) async {
+    final usersRef = FirebaseFirestore.instance.collection('users');
+    final doc = usersRef.doc(user.uid);
+
+    final snapshot = await doc.get();
+    if (!snapshot.exists) {
+      await doc.set({
+        'uid': user.uid,
+        'email': user.email,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isGoogleUser': user.providerData.any((p) => p.providerId == 'google.com'),
+      });
     }
   }
 

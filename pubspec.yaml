@@ -43,13 +43,15 @@ dependencies:
   firebase_auth: ^4.17.4
   provider: ^6.0.0
   http: ^0.13.0
-  cloud_firestore: ^4.0.0
   fl_chart: ^0.64.0
   file_picker: ^8.0.7
   path_provider: ^2.1.2
   intl: ^0.18.1
   share_plus: ^7.0.0
   google_sign_in: ^6.1.6
+  cloud_firestore: ^4.13.1
+
+
 
 dev_dependencies:
   flutter_test:
