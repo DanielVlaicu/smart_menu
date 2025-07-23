@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String baseUrl = 'https://firebase-storage-141030912906.europe-west1.run.app';
 
+
   static Future<Map<String, String>> _authHeaders() async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
