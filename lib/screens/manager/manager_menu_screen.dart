@@ -34,8 +34,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
       if (categories.isNotEmpty) {
         _loadSubcategories(categories[selectedCategoryIndex].id);
       }
-    } catch (e) {
-      print('Eroare la categorii: \$e');
+    } catch (e, stack) {
+      debugPrint('Eroare la categorii: $e');
+      debugPrintStack(stackTrace: stack);
     }
   }
 
@@ -105,10 +106,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
             TextButton(
               onPressed: () async {
                 if (titleController.text.isNotEmpty && imagePath != null) {
-                  final imageUrl = await ApiService.uploadImage(File(imagePath!));
                   await ApiService.createCategory(
                     title: titleController.text,
-                    imageUrl: imageUrl,
+                    imagePath: imagePath!,
                     visible: isVisible,
                   );
                   await _loadCategories();
@@ -178,7 +178,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 await ApiService.updateCategory(
                   id: cat.id,
                   title: titleController.text,
-                  imageUrl: imageUrl,
+                  imagePath: imagePath,
                   visible: isVisible,
                 );
                 await _loadCategories();
@@ -251,10 +251,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
             TextButton(
               onPressed: () async {
                 if (titleController.text.isNotEmpty && imagePath != null) {
-                  final imageUrl = await ApiService.uploadImage(File(imagePath!));
                   await ApiService.createSubcategory(
                     title: titleController.text,
-                    imageUrl: imageUrl,
+                    imagePath: imagePath!,
                     visible: isVisible,
                     categoryId: category.id,
                   );

@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -22,6 +24,33 @@ class AuthService {
     }
   }
 
+  static Future<void> initializeDefaultsOnce() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final snapshot = await doc.get();
+
+    if (snapshot.exists && snapshot.data()?['initialized'] == true) {
+      return; // Deja inițializat
+    }
+
+    final token = await user.getIdToken();
+    final response = await http.post(
+      Uri.parse('https://firebase-storage-141030912906.europe-west1.run.app/initialize'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      await doc.set({'initialized': true}, SetOptions(merge: true));
+    } else {
+      print('Eroare la /initialize: ${response.body}');
+    }
+  }
+
   // Login with email and password + check verification
   Future<String?> loginWithEmail(String email, String password) async {
     try {
@@ -30,7 +59,9 @@ class AuthService {
         password: password,
       );
       if (result.user!.emailVerified) {
+        await initializeDefaultsOnce();
         return 'success';
+
       } else {
         await result.user!.sendEmailVerification();
         await _auth.signOut();
@@ -55,6 +86,7 @@ class AuthService {
       );
       UserCredential result = await _auth.signInWithCredential(credential);
       await saveUserToFirestore(result.user!);
+      await initializeDefaultsOnce();
       return 'success';
     } catch (e) {
       print('Google sign-in error: $e');

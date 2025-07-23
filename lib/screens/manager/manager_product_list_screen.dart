@@ -31,7 +31,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
 
   Future<void> _loadProducts() async {
     try {
-      final result = await ApiService.getProducts(widget.subcategory);
+      final result = await ApiService.getProducts(categoryId: widget.category, subcategoryId: widget.subcategory);
       setState(() {
         products = result.map((e) => Product.fromJson(e)).toList();
       });
@@ -99,7 +99,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              await ApiService.deleteProduct(current.id);
+              await ApiService.deleteProduct(categoryId: widget.category, subcategoryId: widget.subcategory, id: current.id);
               await _loadProducts();
               Navigator.pop(context);
             },
@@ -107,15 +107,13 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
           ),
           TextButton(
             onPressed: () async {
-              final newImageUrl = imagePath.startsWith('/')
-                  ? await ApiService.uploadImage(File(imagePath))
-                  : imagePath;
-
               await ApiService.updateProduct(
+                categoryId: widget.category,
+                subcategoryId: widget.subcategory,
                 id: current.id,
                 title: titleController.text,
                 description: descController.text,
-                imageUrl: newImageUrl,
+                imagePath: imagePath,
                 weight: weightController.text,
                 allergens: allergenController.text,
                 price: priceController.text,
@@ -183,16 +181,16 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
           TextButton(
             onPressed: () async {
               if (imagePath != null) {
-                final imageUrl = await ApiService.uploadImage(File(imagePath!));
                 await ApiService.createProduct(
+                  categoryId: widget.category,
+                  subcategoryId: widget.subcategory,
                   title: titleController.text,
                   description: descController.text,
-                  imageUrl: imageUrl,
+                  imagePath: imagePath!,
                   weight: weightController.text,
                   allergens: allergenController.text,
                   price: priceController.text,
                   visible: isVisible,
-                  subcategoryId: widget.subcategory,
                 );
                 await _loadProducts();
               }
