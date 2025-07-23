@@ -28,6 +28,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   Future<void> _loadCategories() async {
     try {
       final result = await ApiService.getCategories();
+      print('Categorie response: $result'); // vezi structura JSON
       setState(() {
         categories = result.map((e) => Category.fromJson(e)).toList();
       });
@@ -172,9 +173,6 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                final imageUrl = imagePath.startsWith('/')
-                    ? await ApiService.uploadImage(File(imagePath))
-                    : imagePath;
                 await ApiService.updateCategory(
                   id: cat.id,
                   title: titleController.text,

@@ -12,10 +12,10 @@ class Category {
   });
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-    id: json['id'],
-    title: json['title'],
-    imageUrl: json['image_url'],
-    visible: json['visible'],
+    id: json['id'] ?? '',
+    title: json['title'] ?? 'Titlu necunoscut',
+    imageUrl: json['image_url'] ?? '',
+    visible: json['visible'] ?? true,
   );
 
   Map<String, dynamic> toJson() => {
