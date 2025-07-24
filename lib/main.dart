@@ -8,7 +8,7 @@ import 'package:smart_menu/screens/manager/menu_settings_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/manager/dashboard_screen.dart';
-import 'screens/manager/create_menu_screen.dart';
+
 import 'screens/manager/edit_item_screen.dart';
 import 'screens/manager/analytics_screen.dart';
 import 'screens/manager/settings_screen.dart';

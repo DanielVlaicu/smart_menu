@@ -47,11 +47,11 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
 
   void _editProduct(int index) async {
     final current = products[index];
-    final titleController = TextEditingController(text: current.title);
+    final titleController = TextEditingController(text: current.name);
     final descController = TextEditingController(text: current.description);
     final weightController = TextEditingController(text: current.weight);
     final allergenController = TextEditingController(text: current.allergens);
-    final priceController = TextEditingController(text: current.price);
+    final priceController = TextEditingController(text: current.price.toString());
     bool isVisible = current.visible;
     String imagePath = current.imageUrl;
 
@@ -74,12 +74,12 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
                   final result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
                     setState(() {
-                      imagePath = File(result.files.single.path!).path;
+                      imagePath = result.files.single.path!;
                     });
                   }
                 },
                 icon: const Icon(Icons.image),
-                label: const Text('Schimbă imagine'),
+                label: const Text('Alege imagine'),
               ),
               const SizedBox(height: 10),
               Row(
@@ -116,7 +116,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
                 categoryId: widget.categoryId,
                 subcategoryId: widget.subcategoryId,
                 id: current.id,
-                title: titleController.text,
+                name: titleController.text,
                 description: descController.text,
                 imagePath: imagePath,
                 weight: weightController.text,
@@ -185,17 +185,28 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              if (imagePath != null) {
-                final file = await copyAssetToTempFile(
-                    'assets/images/default_product.png',
-                    'default_product.png',
-                    );
-                    imagePath = file.path;
+              if (imagePath == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Te rog alege o imagine')),
+                );
+                return;
+              }
 
+              final file = File(imagePath!);
+              if (!file.existsSync()) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Imaginea nu a fost găsită pe disc:\n$imagePath')),
+                );
+                return;
+              }
+
+              try {
+                print('Imagine selectată: $imagePath');
+                print('Fișierul există: ${File(imagePath!).existsSync()}');
                 await ApiService.createProduct(
                   categoryId: widget.categoryId,
                   subcategoryId: widget.subcategoryId,
-                  title: titleController.text,
+                  name: titleController.text,
                   description: descController.text,
                   imagePath: imagePath!,
                   weight: weightController.text,
@@ -204,12 +215,16 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
                   visible: isVisible,
                 );
                 await _loadProducts();
+                Navigator.pop(context);
+              } catch (e) {
+                debugPrint('Eroare la creare produs: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Eroare: ${e.toString()}')),
+                );
               }
-              Navigator.pop(context);
-              Navigator.pop(context);
             },
             child: const Text('Adaugă'),
-          ),
+          )
         ],
       ),
     );
@@ -233,35 +248,32 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
         itemCount: products.length,
         itemBuilder: (context, index) {
           final product = products[index];
-          return GestureDetector(
-            onTap: () => _editProduct(index),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Stack(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildImage(context, product),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildText(product)),
-                    ],
-                  ),
-                  if (!product.visible)
-                    Positioned(
-                      top: 4,
-                      left: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.visibility_off, size: 16, color: Colors.white),
+          return Padding(
+            padding: const EdgeInsets.all(12),
+            child: Stack(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildImage(context, product, index), // 👈️ PASĂM index aici
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildText(product)),
+                  ],
+                ),
+                if (!product.visible)
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(Icons.visibility_off, size: 16, color: Colors.white),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           );
         },
@@ -269,32 +281,42 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
     );
   }
 
-  Widget _buildImage(BuildContext context, Product product) {
+  Widget _buildImage(BuildContext context, Product product, int index) {
     final imagePath = product.imageUrl;
     final isLocalFile = imagePath.startsWith('/');
 
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ManagerImageFullscreenView(imageUrl: imagePath),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: isLocalFile
-            ? Image.file(
-          File(imagePath),
-          width: 120,
-          height: 120,
-          fit: BoxFit.cover,
-        )
-            : Image.network(
-          imagePath,
-          width: 120,
-          height: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => const Icon(Icons.image, color: Colors.white),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ManagerImageFullscreenView(imageUrl: imagePath),
+            ),
+          );
+        },
+        onLongPress: () {
+          print('Long press'); // test
+          _editProduct(index);
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: isLocalFile
+              ? Image.file(
+            File(imagePath),
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+          )
+              : Image.network(
+            imagePath,
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+            const Icon(Icons.image, color: Colors.white),
+          ),
         ),
       ),
     );
@@ -306,7 +328,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(product.title, style: const TextStyle(fontSize: 18, color: Colors.white)),
+          Text(product.name, style: const TextStyle(fontSize: 18, color: Colors.white)),
           const SizedBox(height: 4),
           Text(product.description, style: const TextStyle(color: Colors.white70)),
           const SizedBox(height: 8),

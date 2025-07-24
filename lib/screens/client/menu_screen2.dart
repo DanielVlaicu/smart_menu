@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_menu/screens/client/product_list_screen2.dart';
 
-import 'product_list_screen.dart';
+
 
 class ClientMenuScreen2 extends StatefulWidget {
   const ClientMenuScreen2({super.key});

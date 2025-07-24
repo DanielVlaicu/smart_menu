@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -10,6 +11,7 @@ class ApiService {
   static Future<Map<String, String>> _authHeaders() async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
+    debugPrint('Bearer token: $token');
 
     return {
       'Authorization': 'Bearer $token',
@@ -222,7 +224,7 @@ class ApiService {
     }
   }
   static Future<void> createProduct({
-    required String title,
+    required String name,
     required String description,
     required String imagePath,
     required String weight,
@@ -240,7 +242,7 @@ class ApiService {
       Uri.parse('$baseUrl/categories/$categoryId/subcategories/$subcategoryId/products'),
     )
       ..headers['Authorization'] = 'Bearer $token'
-      ..fields['title'] = title
+      ..fields['name'] = name
       ..fields['description'] = description
       ..fields['weight'] = weight
       ..fields['allergens'] = allergens
@@ -258,7 +260,7 @@ class ApiService {
 
   static Future<void> updateProduct({
     required String id,
-    required String title,
+    required String name,
     required String description,
     required String imagePath,
     required String weight,
@@ -276,7 +278,7 @@ class ApiService {
       Uri.parse('$baseUrl/categories/$categoryId/subcategories/$subcategoryId/products/$id'),
     )
       ..headers['Authorization'] = 'Bearer $token'
-      ..fields['title'] = title
+      ..fields['name'] = name
       ..fields['description'] = description
       ..fields['weight'] = weight
       ..fields['allergens'] = allergens
