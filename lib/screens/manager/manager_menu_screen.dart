@@ -267,6 +267,85 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
     );
   }
 
+  void _editSubcategory(Subcategory subcategory, String categoryId) async {
+    final titleController = TextEditingController(text: subcategory.title);
+    String imagePath = subcategory.imageUrl;
+    bool isVisible = subcategory.visible;
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Editează subcategorie'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'Titlu'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+                  if (result != null) {
+                    imagePath = File(result.files.single.path!).path;
+                  }
+                },
+                icon: const Icon(Icons.image),
+                label: const Text('Schimbă imagine'),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Text('Vizibil în meniu'),
+                  const Spacer(),
+                  StatefulBuilder(
+                    builder: (context, setInnerState) => Switch(
+                      value: isVisible,
+                      onChanged: (val) {
+                        setInnerState(() {
+                          isVisible = val;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await ApiService.deleteSubcategory(
+                categoryId: categoryId,
+                id: subcategory.id,
+              );
+              await _loadSubcategories(categoryId);
+              Navigator.pop(context);
+            },
+            child: const Text('Șterge', style: TextStyle(color: Colors.red)),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ApiService.updateSubcategory(
+                id: subcategory.id,
+                title: titleController.text,
+                imagePath: imagePath,
+                visible: isVisible,
+                categoryId: categoryId,
+              );
+              await _loadSubcategories(categoryId);
+              Navigator.pop(context);
+            },
+            child: const Text('Salvează'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentCategory = categories.isNotEmpty ? categories[selectedCategoryIndex] : null;
@@ -334,12 +413,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => ManagerProductListScreen(
-                            subcategory: item.title,
-                            category: currentCategory.title,
+                            subcategoryId: item.id,
+                            categoryId: currentCategory.id,
+                            subcategoryTitle: item.title, // nou
                           ),
                         ),
                       );
                     },
+                    onLongPress: () => _editSubcategory(item, currentCategory.id),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Stack(

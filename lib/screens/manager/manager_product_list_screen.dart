@@ -7,13 +7,15 @@ import '../../services/api_services.dart';
 import 'manager_image_fullscreen_view.dart';
 
 class ManagerProductListScreen extends StatefulWidget {
-  final String subcategory;
-  final String category;
+  final String subcategoryId;
+  final String categoryId;
+  final String subcategoryTitle;
 
   const ManagerProductListScreen({
     super.key,
-    required this.subcategory,
-    required this.category,
+    required this.subcategoryId,
+    required this.categoryId,
+    required this.subcategoryTitle,
   });
 
   @override
@@ -31,7 +33,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
 
   Future<void> _loadProducts() async {
     try {
-      final result = await ApiService.getProducts(categoryId: widget.category, subcategoryId: widget.subcategory);
+      final result = await ApiService.getProducts(categoryId: widget.categoryId, subcategoryId: widget.subcategoryId,);
       setState(() {
         products = result.map((e) => Product.fromJson(e)).toList();
       });
@@ -99,7 +101,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              await ApiService.deleteProduct(categoryId: widget.category, subcategoryId: widget.subcategory, id: current.id);
+              await ApiService.deleteProduct(categoryId: widget.categoryId, subcategoryId: widget.subcategoryId, id: current.id);
               await _loadProducts();
               Navigator.pop(context);
             },
@@ -108,8 +110,8 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
           TextButton(
             onPressed: () async {
               await ApiService.updateProduct(
-                categoryId: widget.category,
-                subcategoryId: widget.subcategory,
+                categoryId: widget.categoryId,
+                subcategoryId: widget.subcategoryId,
                 id: current.id,
                 title: titleController.text,
                 description: descController.text,
@@ -182,8 +184,8 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
             onPressed: () async {
               if (imagePath != null) {
                 await ApiService.createProduct(
-                  categoryId: widget.category,
-                  subcategoryId: widget.subcategory,
+                  categoryId: widget.categoryId,
+                  subcategoryId: widget.subcategoryId,
                   title: titleController.text,
                   description: descController.text,
                   imagePath: imagePath!,
@@ -208,7 +210,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(widget.subcategory),
+        title: Text(widget.subcategoryTitle),
         backgroundColor: Colors.black,
         actions: [
           IconButton(
