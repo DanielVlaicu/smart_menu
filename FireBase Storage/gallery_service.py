@@ -5,7 +5,6 @@ from uuid import uuid4
 
 router = APIRouter()
 
-# 🔒 Obține UID din ID Token Firebase
 def get_current_uid(authorization: str = Header(...)) -> str:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token JWT lipsă sau invalid")
@@ -16,11 +15,9 @@ def get_current_uid(authorization: str = Header(...)) -> str:
     except Exception:
         raise HTTPException(status_code=401, detail="Token Firebase invalid")
 
-# 🔧 Obține instanța Firestore
 def get_firestore():
     return firestore.client()
 
-# ☁️ Încarcă imagine în Firebase Storage
 def upload_image(uid: str, file_obj, filename: str, folder: str = "images") -> str:
     bucket = storage.bucket()
     image_id = f"{uuid4()}_{filename}"
@@ -30,11 +27,53 @@ def upload_image(uid: str, file_obj, filename: str, folder: str = "images") -> s
     blob.make_public()
     return blob.public_url
 
-# 🟦 CATEGORII
+@router.post("/initialize")
+def initialize_user(uid: str = Depends(get_current_uid)):
+    db = get_firestore()
+    user_ref = db.collection("users").document(uid)
+    existing = user_ref.get().to_dict()
+    if existing and existing.get("initialized") == True:
+        return {"message": "Deja inițializat"}
+
+    category_ref = user_ref.collection("categories").document()
+    category_ref.set({
+        "name": "Food",
+        "imageUrl": "",
+        "visible": True,
+        "createdAt": firestore.SERVER_TIMESTAMP,
+        "protected": True
+    })
+
+    subcategory_ref = category_ref.collection("subcategories").document()
+    subcategory_ref.set({
+        "name": "Starter rece",
+        "imageUrl": "",
+        "visible": True,
+        "createdAt": firestore.SERVER_TIMESTAMP,
+        "protected": True
+    })
+
+    subcategory_ref.collection("products").document().set({
+        "name": "Crochete",
+        "price": 0.0,
+        "description": "Produs implicit",
+        "weight": "",
+        "allergens": "",
+        "imageUrl": "",
+        "visible": True,
+        "createdAt": firestore.SERVER_TIMESTAMP,
+        "protected": True
+    })
+
+    user_ref.set({"initialized": True}, merge=True)
+    return {"message": "User initialized cu structura default"}
+
+# ------------------ CATEGORII ------------------
 
 @router.post("/categories")
 def create_category(
     name: str = Form(...),
+    visible: bool = Form(True),
     file: UploadFile = File(...),
     uid: str = Depends(get_current_uid)
 ):
@@ -44,57 +83,94 @@ def create_category(
     cat_doc.set({
         "name": name,
         "imageUrl": image_url,
+        "visible": visible,
         "createdAt": firestore.SERVER_TIMESTAMP
     })
-    return {"message": "Categorie creată", "id": cat_doc.id, "imageUrl": image_url}
+    return {"message": "Categorie creată", "id": cat_doc.id, "image_url": image_url}
 
 @router.get("/categories", response_model=List[dict])
 def get_categories(uid: str = Depends(get_current_uid)):
     db = get_firestore()
     cats_ref = db.collection("users").document(uid).collection("categories")
     cats = cats_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in cats]
+    return [{
+        "id": doc.id,
+        "title": doc.to_dict().get("name"),
+        "image_url": doc.to_dict().get("imageUrl"),
+        "visible": doc.to_dict().get("visible", True),
+        "protected": doc.to_dict().get("protected", False)
+    } for doc in cats]
 
 @router.put("/categories/{category_id}")
 def update_category(
     category_id: str,
     name: str = Form(...),
+    visible: bool = Form(True),
+    file: UploadFile = File(None),
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-    db.collection("users").document(uid).collection("categories").document(category_id).update({
-        "name": name
-    })
+    update_data = {"name": name, "visible": visible}
+    if file:
+        image_url = upload_image(uid, file.file, file.filename, folder="categories")
+        update_data["imageUrl"] = image_url
+
+    db.collection("users").document(uid).collection("categories").document(category_id).update(update_data)
     return {"message": "Categorie modificată"}
 
 @router.delete("/categories/{category_id}")
 def delete_category(category_id: str, uid: str = Depends(get_current_uid)):
     db = get_firestore()
+    doc = db.collection("users").document(uid).collection("categories").document(category_id).get()
+    if doc.exists and doc.to_dict().get("protected"):
+        raise HTTPException(status_code=403, detail="Această categorie nu poate fi ștearsă")
     db.collection("users").document(uid).collection("categories").document(category_id).delete()
     return {"message": "Categorie ștearsă"}
 
-# 🟨 SUBCATEGORII
+# ------------------ SUBCATEGORII ------------------
 
 @router.post("/categories/{category_id}/subcategories")
 def create_subcategory(
     category_id: str,
     name: str = Form(...),
+    visible: bool = Form(True),
     file: UploadFile = File(...),
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
+
+    # Upload imagine pentru subcategorie
     image_url = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
+
+    # Crează documentul pentru subcategorie
     subcat_doc = (
         db.collection("users").document(uid)
           .collection("categories").document(category_id)
           .collection("subcategories").document()
     )
+
     subcat_doc.set({
         "name": name,
         "imageUrl": image_url,
+        "visible": visible,
         "createdAt": firestore.SERVER_TIMESTAMP
     })
-    return {"message": "Subcategorie creată", "id": subcat_doc.id, "imageUrl": image_url}
+
+    # 🆕 Creează produs implicit în subcategorie
+    subcat_doc.collection("products").document().set({
+        "name": "Produs implicit",
+        "price": 0.0,
+        "description": "Acesta este un produs generat automat",
+        "weight": "",
+        "allergens": "",
+        "imageUrl": "",
+        "visible": True,
+        "createdAt": firestore.SERVER_TIMESTAMP,
+        "protected": True
+    })
+
+    return {"message": "Subcategorie creată", "id": subcat_doc.id, "image_url": image_url}
+
 
 @router.get("/categories/{category_id}/subcategories", response_model=List[dict])
 def get_subcategories(category_id: str, uid: str = Depends(get_current_uid)):
@@ -105,27 +181,46 @@ def get_subcategories(category_id: str, uid: str = Depends(get_current_uid)):
           .collection("subcategories")
     )
     subs = subs_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in subs]
+    return [{
+        "id": doc.id,
+        "title": doc.to_dict().get("name"),
+        "image_url": doc.to_dict().get("imageUrl"),
+        "visible": doc.to_dict().get("visible", True),
+        "protected": doc.to_dict().get("protected", False),
+        "category_id": category_id
+    } for doc in subs]
 
 @router.put("/categories/{category_id}/subcategories/{subcategory_id}")
 def update_subcategory(
     category_id: str,
     subcategory_id: str,
     name: str = Form(...),
+    visible: bool = Form(True),
+    file: UploadFile = File(None),
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-    (
+    subcat_ref = (
         db.collection("users").document(uid)
           .collection("categories").document(category_id)
           .collection("subcategories").document(subcategory_id)
-          .update({"name": name})
     )
+    if not subcat_ref.get().exists:
+        raise HTTPException(status_code=404, detail="Subcategoria nu există")
+    update_data = {"name": name, "visible": visible}
+    if file:
+        image_url = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
+        update_data["imageUrl"] = image_url
+
+    subcat_ref.update(update_data)
     return {"message": "Subcategorie modificată"}
 
 @router.delete("/categories/{category_id}/subcategories/{subcategory_id}")
 def delete_subcategory(category_id: str, subcategory_id: str, uid: str = Depends(get_current_uid)):
     db = get_firestore()
+    doc = db.collection("users").document(uid).collection("categories").document(category_id).collection("subcategories").document(subcategory_id).get()
+    if doc.exists and doc.to_dict().get("protected"):
+        raise HTTPException(status_code=403, detail="Această subcategorie nu poate fi ștearsă")
     (
         db.collection("users").document(uid)
           .collection("categories").document(category_id)
@@ -134,7 +229,7 @@ def delete_subcategory(category_id: str, subcategory_id: str, uid: str = Depends
     )
     return {"message": "Subcategorie ștearsă"}
 
-# 🟩 PRODUSE
+# ------------------ PRODUSE ------------------
 
 @router.post("/categories/{category_id}/subcategories/{subcategory_id}/products")
 def create_product(
@@ -143,6 +238,9 @@ def create_product(
     name: str = Form(...),
     price: float = Form(...),
     description: str = Form(""),
+    weight: str = Form(""),
+    allergens: str = Form(""),
+    visible: bool = Form(True),
     file: UploadFile = File(...),
     uid: str = Depends(get_current_uid)
 ):
@@ -159,10 +257,13 @@ def create_product(
         "name": name,
         "price": price,
         "description": description,
+        "weight": weight,
+        "allergens": allergens,
+        "visible": visible,
         "imageUrl": image_url,
         "createdAt": firestore.SERVER_TIMESTAMP
     })
-    return {"message": "Produs creat", "id": prod_doc.id, "imageUrl": image_url}
+    return {"message": "Produs creat", "id": prod_doc.id, "image_url": image_url}
 
 @router.get("/categories/{category_id}/subcategories/{subcategory_id}/products", response_model=List[dict])
 def get_products(category_id: str, subcategory_id: str, uid: str = Depends(get_current_uid)):
@@ -173,8 +274,19 @@ def get_products(category_id: str, subcategory_id: str, uid: str = Depends(get_c
           .collection("subcategories").document(subcategory_id)
           .collection("products")
     )
-    prods = prod_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in prods]
+    products = prod_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()
+    return [{
+        "id": doc.id,
+        "name": doc.to_dict().get("name"),
+        "price": doc.to_dict().get("price"),
+        "description": doc.to_dict().get("description"),
+        "weight": doc.to_dict().get("weight"),
+        "allergens": doc.to_dict().get("allergens"),
+        "image_url": doc.to_dict().get("imageUrl"),
+        "visible": doc.to_dict().get("visible", True),
+        "protected": doc.to_dict().get("protected", False),
+        "subcategory_id": subcategory_id
+    } for doc in products]
 
 @router.put("/categories/{category_id}/subcategories/{subcategory_id}/products/{product_id}")
 def update_product(
@@ -184,32 +296,43 @@ def update_product(
     name: str = Form(...),
     price: float = Form(...),
     description: str = Form(""),
+    weight: str = Form(""),
+    allergens: str = Form(""),
+    visible: bool = Form(True),
+    file: UploadFile = File(None),
     uid: str = Depends(get_current_uid)
 ):
+    db = get_firestore()
+    update_data = {
+        "name": name,
+        "price": price,
+        "description": description,
+        "weight": weight,
+        "allergens": allergens,
+        "visible": visible
+    }
+    if file:
+        image_url = upload_image(uid, file.file, file.filename,
+                                 folder=f"categories/{category_id}/subcategories/{subcategory_id}/products")
+        update_data["imageUrl"] = image_url
+
+    (
+        db.collection("users").document(uid)
+          .collection("categories").document(category_id)
+          .collection("subcategories").document(subcategory_id)
+          .collection("products").document(product_id)
+          .update(update_data)
+    )
+    return {"message": "Produs modificat"}
+
+@router.delete("/categories/{category_id}/subcategories/{subcategory_id}/products/{product_id}")
+def delete_product(category_id: str, subcategory_id: str, product_id: str, uid: str = Depends(get_current_uid)):
     db = get_firestore()
     (
         db.collection("users").document(uid)
           .collection("categories").document(category_id)
           .collection("subcategories").document(subcategory_id)
           .collection("products").document(product_id)
-          .update({
-              "name": name,
-              "price": price,
-              "description": description
-          })
+          .delete()
     )
-    return {"message": "Produs modificat"}
-
-    @router.delete("/categories/{category_id}/subcategories/{subcategory_id}/products/{product_id}")
-    def delete_product(category_id: str, subcategory_id: str, product_id: str, uid: str = Depends(get_current_uid)):
-        db = get_firestore()  # ← Asta lipsea
-        (
-            db.collection("users").document(uid)
-            .collection("categories").document(category_id)
-            .collection("subcategories").document(subcategory_id)
-            .collection("products").document(product_id)
-            .delete()
-        )
-        return {"message": "Produs șters"}
-
     return {"message": "Produs șters"}
