@@ -19,11 +19,19 @@ import 'screens/manager/qr_generator_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const RestaurantMenuApp());
+  final params = Uri.base.queryParameters;
+  final isClient = params['client'] == 'true';
+  final uid = params['uid'];
+
+  runApp(RestaurantMenuApp(isClient: isClient, clientUid: uid));
 }
 
 class RestaurantMenuApp extends StatelessWidget {
-  const RestaurantMenuApp({super.key});
+
+  final bool isClient;
+  final String? clientUid;
+
+  const RestaurantMenuApp({super.key, required this.isClient, this.clientUid});
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +52,15 @@ class RestaurantMenuApp extends StatelessWidget {
         '/settings': (context) => SettingsScreen(),
         '/account_settings': (context) => const AccountSettingsScreen(),
         '/menu_settings': (context) => const MenuSettingsScreen(),
-        '/menu': (context) => const ClientMenuScreen(),
-        '/menu2': (context) => const ClientMenuScreen2(),
-        '/qr': (context) => QRGeneratorScreen(),
+        '/menu2': (context) => const ClientMenuScreen2(), /// meniu cu afisare dif mockup
+        '/qr': (context) {
+          final uid = ModalRoute.of(context)!.settings.arguments as String;
+          return QRGeneratorScreen(uid: uid);
+        },
+        '/menu': (context) {
+          final uid = ModalRoute.of(context)!.settings.arguments as String;
+          return ClientMenuScreen(uid: uid);
+        },
       },
     );
   }

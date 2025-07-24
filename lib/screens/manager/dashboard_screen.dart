@@ -1,20 +1,40 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 
 class DashboardScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> options = [
-    {'icon': Icons.menu_book, 'label': 'Creeaza Meniu', 'route': '/manager_menu_screen'},
-    {'icon': Icons.qr_code_2, 'label': 'Generează QR', 'route': '/qr'},
-    {'icon': Icons.bar_chart, 'label': 'Statistici', 'route': '/analytics'},
-    {'icon': Icons.settings, 'label': 'Setări', 'route': '/settings'},
-    {'icon': Icons.menu_book, 'label': 'Meniul clinntului', 'route': '/menu'},
-    {'icon': Icons.menu_book, 'label': 'Meniul clinntului 2', 'route': '/menu2'},
-  ];
+  DashboardScreen({super.key});
 
-
+  final List<Map<String, dynamic>> options = [];
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    final List<Map<String, dynamic>> options = [
+      {'icon': Icons.menu_book, 'label': 'Creează Meniu', 'route': '/manager_menu_screen'},
+      {
+        'icon': Icons.qr_code_2,
+        'label': 'Generează QR',
+        'onTap': (BuildContext context) {
+          if (uid != null) {
+            Navigator.pushNamed(context, '/qr', arguments: uid);
+          }
+        }
+      },
+      {'icon': Icons.bar_chart, 'label': 'Statistici', 'route': '/analytics'},
+      {'icon': Icons.settings, 'label': 'Setări', 'route': '/settings'},
+      {
+        'icon': Icons.menu_book,
+        'label': 'Meniul clientului',
+        'onTap': (BuildContext context) {
+          if (uid != null) {
+            Navigator.pushNamed(context, '/menu', arguments: uid);
+          }
+        }
+      },
+    ];
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -41,7 +61,13 @@ class DashboardScreen extends StatelessWidget {
         mainAxisSpacing: 12,
         children: options.map((option) {
           return GestureDetector(
-            onTap: () => Navigator.pushNamed(context, option['route']),
+            onTap: () {
+              if (option.containsKey('onTap')) {
+                option['onTap'](context);
+              } else {
+                Navigator.pushNamed(context, option['route']);
+              }
+            },
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.grey[900],

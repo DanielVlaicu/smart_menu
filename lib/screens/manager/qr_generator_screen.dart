@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -9,10 +8,11 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 class QRGeneratorScreen extends StatelessWidget {
-  final String qrData = 'https://smartmenu.app/restaurant-id-123';
-  final Color themeBlue = const Color(0xFFB8D8F8);
+  final String uid;
+  const QRGeneratorScreen({super.key, required this.uid});
 
-  const QRGeneratorScreen({super.key});
+  String get qrData => 'https://smartmenu.app?client=true&uid=$uid';
+  final Color themeBlue = const Color(0xFFB8D8F8);
 
   Future<File> _generatePngFile() async {
     final recorder = PictureRecorder();
@@ -78,14 +78,17 @@ class QRGeneratorScreen extends StatelessWidget {
 
   Future<void> _shareQrCode(BuildContext context) async {
     final file = await _generatePngFile();
-    await Share.shareXFiles([XFile(file.path)], text: 'Scanează codul QR pentru acces rapid la meniu!');
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Scanează codul QR pentru a accesa meniul!',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Generează Cod QR', style: TextStyle(color: Colors.white)),
+        title: const Text('Cod QR Meniu', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
       ),
       backgroundColor: Colors.black,
