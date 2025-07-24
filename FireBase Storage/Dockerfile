@@ -1,17 +1,18 @@
-# Imagine de bază oficială
+# Imagine de bază cu Python 3.12
 FROM python:3.12-slim
 
-# Setează directorul de lucru
+# Setare director de lucru
 WORKDIR /app
 
-# Copiază tot codul
-COPY . .
-
-# Instalează dependințele
+# Copiază fișierul requirements.txt și instalează dependențele
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expune portul
+# Copiază restul codului în container
+COPY . .
+
+# ✅ Setează portul de expunere (opțional pentru local, recomandat pentru claritate)
 EXPOSE 8000
 
-# Comandă de pornire
+# ✅ Rulează aplicația FastAPI pe 0.0.0.0:8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
