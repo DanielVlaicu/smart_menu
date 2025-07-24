@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
 import '../../models/category.dart';
@@ -23,6 +25,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   void initState() {
     super.initState();
     _loadCategories();
+  }
+
+  Future<File> copyAssetToTempFile(String assetPath, String fileName) async {
+    final byteData = await rootBundle.load(assetPath);
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/$fileName');
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+    return file;
   }
 
   Future<void> _loadCategories() async {
@@ -106,7 +116,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                if (titleController.text.isNotEmpty && imagePath != null) {
+                if (titleController.text.isNotEmpty) {
+                  if (imagePath == null) {
+                    final file = await copyAssetToTempFile(
+                      'assets/images/default_category.png',
+                      'default_category.png',
+                    );
+                    imagePath = file.path;
+                  }
                   await ApiService.createCategory(
                     title: titleController.text,
                     imagePath: imagePath!,
@@ -248,7 +265,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                if (titleController.text.isNotEmpty && imagePath != null) {
+                if (titleController.text.isNotEmpty) {
+                  if (imagePath == null) {
+                    final file = await copyAssetToTempFile(
+                      'assets/images/default_subcategory.png',
+                      'default_subcategory.png',
+                    );
+                    imagePath = file.path;
+                  }
                   await ApiService.createSubcategory(
                     title: titleController.text,
                     imagePath: imagePath!,

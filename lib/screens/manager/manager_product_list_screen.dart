@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 
 import '../../models/product.dart';
 import '../../services/api_services.dart';
 import 'manager_image_fullscreen_view.dart';
+
 
 class ManagerProductListScreen extends StatefulWidget {
   final String subcategoryId;
@@ -183,6 +186,12 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
           TextButton(
             onPressed: () async {
               if (imagePath != null) {
+                final file = await copyAssetToTempFile(
+                    'assets/images/default_product.png',
+                    'default_product.png',
+                    );
+                    imagePath = file.path;
+
                 await ApiService.createProduct(
                   categoryId: widget.categoryId,
                   subcategoryId: widget.subcategoryId,
@@ -196,6 +205,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
                 );
                 await _loadProducts();
               }
+              Navigator.pop(context);
               Navigator.pop(context);
             },
             child: const Text('Adaugă'),
@@ -306,5 +316,13 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
         ],
       ),
     );
+  }
+
+  Future<File> copyAssetToTempFile(String assetPath, String fileName) async {
+    final byteData = await rootBundle.load(assetPath);
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/$fileName');
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+    return file;
   }
 }
