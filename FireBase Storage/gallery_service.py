@@ -336,3 +336,68 @@ def delete_product(category_id: str, subcategory_id: str, product_id: str, uid: 
           .delete()
     )
     return {"message": "Produs șters"}
+
+@router.get("/public-menu/{uid}")
+def get_public_menu(uid: str):
+    db = get_firestore()
+    user_doc = db.collection("users").document(uid).get()
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="Restaurantul nu există")
+
+    restaurant_name = user_doc.to_dict().get("restaurant_name", "Meniu")
+    categories_ref = db.collection("users").document(uid).collection("categories")
+    categories = categories_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()
+
+    result = []
+    for cat_doc in categories:
+        cat = cat_doc.to_dict()
+        if not cat.get("visible", True):
+            continue  # ✅ Skip categoriile ascunse
+
+        cat_data = {
+            "id": cat_doc.id,
+            "name": cat.get("name"),
+            "image_url": cat.get("imageUrl"),
+            "subcategories": []
+        }
+
+        subcat_ref = categories_ref.document(cat_doc.id).collection("subcategories")
+        subcats = subcat_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()
+        for subcat_doc in subcats:
+            subcat = subcat_doc.to_dict()
+            if not subcat.get("visible", True):
+                continue  # ✅ Skip subcategoriile ascunse
+
+            subcat_data = {
+                "id": subcat_doc.id,
+                "name": subcat.get("name"),
+                "image_url": subcat.get("imageUrl"),
+                "products": []
+            }
+
+            prod_ref = subcat_ref.document(subcat_doc.id).collection("products")
+            prods = prod_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()
+            for prod_doc in prods:
+                prod = prod_doc.to_dict()
+                if not prod.get("visible", True):
+                    continue  # ✅ Skip produsele ascunse
+
+                subcat_data["products"].append({
+                    "id": prod_doc.id,
+                    "name": prod.get("name"),
+                    "price": prod.get("price"),
+                    "description": prod.get("description"),
+                    "weight": prod.get("weight"),
+                    "allergens": prod.get("allergens"),
+                    "image_url": prod.get("imageUrl"),
+                })
+
+            cat_data["subcategories"].append(subcat_data)
+
+        result.append(cat_data)
+
+    return {
+        "restaurant_name": restaurant_name,
+        "categories": result
+    }
+
