@@ -1,5 +1,6 @@
-fastapi
-uvicorn
-firebase-admin
-python-multipart
-requests
+fastapi==0.110.2
+uvicorn[standard]==0.29.0
+firebase-admin==6.5.0
+python-multipart==0.0.9
+requests==2.31.0
+pydantic==2.7.1
