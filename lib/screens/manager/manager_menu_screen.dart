@@ -63,16 +63,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   }
 
   void _addCategory() async {
-    if (categories.length >= 3) return;
-
     final TextEditingController titleController = TextEditingController();
     String? imagePath;
     bool isVisible = true;
 
     await showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setInnerState) => AlertDialog(
           title: const Text('Adaugă categorie'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -86,7 +84,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 onPressed: () async {
                   FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
-                    setState(() {
+                    setInnerState(() {
                       imagePath = File(result.files.single.path!).path;
                     });
                   }
@@ -99,15 +97,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 children: [
                   const Text('Vizibil în meniu'),
                   const Spacer(),
-                  StatefulBuilder(
-                    builder: (context, setInnerState) => Switch(
-                      value: isVisible,
-                      onChanged: (val) {
-                        setInnerState(() {
-                          isVisible = val;
-                        });
-                      },
-                    ),
+                  Switch(
+                    value: isVisible,
+                    onChanged: (val) => setInnerState(() => isVisible = val),
                   ),
                 ],
               ),
@@ -117,16 +109,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
             TextButton(
               onPressed: () async {
                 if (titleController.text.isNotEmpty) {
-                  if (imagePath == null) {
-                    final file = await copyAssetToTempFile(
-                      'assets/images/default_category.png',
-                      'default_category.png',
-                    );
-                    imagePath = file.path;
-                  }
+                  String finalPath = imagePath ?? (await copyAssetToTempFile(
+                    'assets/images/default_category.png',
+                    'default_category.png',
+                  )).path;
+
                   await ApiService.createCategory(
                     title: titleController.text,
-                    imagePath: imagePath!,
+                    imagePath: finalPath,
                     visible: isVisible,
                   );
                   await _loadCategories();
@@ -136,10 +126,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
               child: const Text('Adaugă'),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
+
 
   void _editCategory(int index) async {
     final cat = categories[index];
@@ -222,8 +213,8 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
 
     await showDialog(
       context: context,
-      builder: (_) {
-        return AlertDialog(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setInnerState) => AlertDialog(
           title: const Text('Adaugă subcategorie'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -237,7 +228,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 onPressed: () async {
                   FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
-                    imagePath = File(result.files.single.path!).path;
+                    setInnerState(() {
+                      imagePath = File(result.files.single.path!).path;
+                    });
                   }
                 },
                 icon: const Icon(Icons.image),
@@ -248,15 +241,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 children: [
                   const Text('Vizibil în meniu'),
                   const Spacer(),
-                  StatefulBuilder(
-                    builder: (context, setInnerState) => Switch(
-                      value: isVisible,
-                      onChanged: (val) {
-                        setInnerState(() {
-                          isVisible = val;
-                        });
-                      },
-                    ),
+                  Switch(
+                    value: isVisible,
+                    onChanged: (val) => setInnerState(() => isVisible = val),
                   ),
                 ],
               ),
@@ -266,16 +253,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
             TextButton(
               onPressed: () async {
                 if (titleController.text.isNotEmpty) {
-                  if (imagePath == null) {
-                    final file = await copyAssetToTempFile(
-                      'assets/images/default_subcategory.png',
-                      'default_subcategory.png',
-                    );
-                    imagePath = file.path;
-                  }
+                  String finalPath = imagePath ?? (await copyAssetToTempFile(
+                    'assets/images/default_subcategory.png',
+                    'default_subcategory.png',
+                  )).path;
+
                   await ApiService.createSubcategory(
                     title: titleController.text,
-                    imagePath: imagePath!,
+                    imagePath: finalPath,
                     visible: isVisible,
                     categoryId: category.id,
                   );
@@ -286,10 +271,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
               child: const Text('Adaugă'),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
+
 
   void _editSubcategory(Subcategory subcategory, String categoryId) async {
     final titleController = TextEditingController(text: subcategory.title);
