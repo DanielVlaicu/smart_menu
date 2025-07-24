@@ -14,11 +14,21 @@ import 'screens/manager/analytics_screen.dart';
 import 'screens/manager/settings_screen.dart';
 import 'screens/client/menu_screen.dart';
 import 'screens/manager/qr_generator_screen.dart';
-
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  try {
+    // NU inițializează din nou dacă deja există
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    print('Firebase init error: $e');
+  }
+
   final params = Uri.base.queryParameters;
   final isClient = params['client'] == 'true';
   final uid = params['uid'];
@@ -41,7 +51,26 @@ class RestaurantMenuApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: FirebaseAuth.instance.currentUser == null ? '/' : '/dashboard',
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        final params = Uri.base.queryParameters;
+        final isClient = params['client'] == 'true';
+        final uid = params['uid'];
+        final user = FirebaseAuth.instance.currentUser;
+
+        if (isClient && uid != null) {
+          return MaterialPageRoute(
+              builder: (_) => ClientMenuScreen(uid: uid));
+        }
+
+        if (user == null) {
+          return MaterialPageRoute(
+              builder: (_) => const LoginScreen());
+        } else {
+          return MaterialPageRoute(
+              builder: (_) => DashboardScreen());
+        }
+      },
       routes: {
         '/': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
