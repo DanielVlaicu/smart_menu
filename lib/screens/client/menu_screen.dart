@@ -24,23 +24,32 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
   }
 
   Future<void> fetchMenu() async {
-    final url = Uri.parse('https://smartmenu.app/api/public-menu/${widget.uid}');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+    final url = Uri.parse('https://smartmenu-d3e47.web.app/public-menu/${widget.uid}');
+    try {
+      final response = await http.get(url);
+      print('Status: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          restaurantName = data['restaurant_name'] ?? "Meniu";
+          categories = (data['categories'] as List<dynamic>? ?? [])
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+          loading = false;
+        });
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print(' fetchMenu error: $e');
       setState(() {
-        restaurantName = data['restaurant_name'] ?? "Meniu";
-        categories = List<Map<String, dynamic>>.from(data['categories'] ?? []);
         loading = false;
+        restaurantName = 'Eroare';
+        categories = [];
       });
-    } else {
-      setState(() {
-        loading = false;
-      });
-      // Poți adăuga un mesaj de eroare aici
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +68,9 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
     }
 
     final currentCategory = categories[selectedCategoryIndex];
-    final List subcategories = currentCategory['subcategories'] ?? [];
+    final List subcategories = (currentCategory['subcategories'] as List<dynamic>? ?? [])
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -74,6 +85,12 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
               background: Image.network(
                 currentCategory['image_url'] ?? '',
                 fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: Colors.grey[800],
+                  child: const Center(
+                    child: Icon(Icons.broken_image, color: Colors.white),
+                  ),
+                ),
               ),
             ),
           ),
@@ -108,6 +125,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
                                   width: 40,
                                   height: 40,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -133,18 +151,22 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProductListScreen(
-                            subcategory: item['name'],
-                            category: currentCategory['name'],
-                            products: item['products'],
+                      onTap: () {
+                        final products = (item['products'] as List<dynamic>? ?? [])
+                            .map((e) => Map<String, dynamic>.from(e))
+                            .toList();
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductListScreen(
+                              subcategory: item['name'],
+                              category: currentCategory['name'],
+                              products: products,
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Stack(
@@ -155,6 +177,12 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
                             height: 160,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 160,
+                              width: double.infinity,
+                              color: Colors.grey[800],
+                              child: const Center(child: Icon(Icons.broken_image, color: Colors.white)),
+                            ),
                           ),
                           Container(
                             height: 160,

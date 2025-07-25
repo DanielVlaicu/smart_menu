@@ -32,12 +32,7 @@ void main() async {
   final isClient = params['client'] == 'true';
   final uid = params['uid'];
 
-  runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: RootSelector(isClient: isClient, clientUid: uid),
-    ),
-  );
+  runApp(RestaurantMenuApp(isClient: isClient, clientUid: uid));
 }
 
 class RestaurantMenuApp extends StatelessWidget {
@@ -99,23 +94,3 @@ class RestaurantMenuApp extends StatelessWidget {
   }
 }
 
-class RootSelector extends StatelessWidget {
-  final bool isClient;
-  final String? clientUid;
-
-  const RootSelector({super.key, required this.isClient, this.clientUid});
-
-  @override
-  Widget build(BuildContext context) {
-    if (isClient && clientUid != null) {
-      return ClientMenuScreen(uid: clientUid!);
-    }
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return const LoginScreen();
-    } else {
-      return DashboardScreen();
-    }
-  }
-}

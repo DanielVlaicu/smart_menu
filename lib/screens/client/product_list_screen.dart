@@ -39,47 +39,65 @@ class ProductListScreen extends StatelessWidget {
   }
 
   Widget _buildImage(BuildContext context, Map<String, dynamic> product) {
+    final imageUrl = (product['image_url'] ?? '').toString();
+    final hasImage = imageUrl.isNotEmpty;
+
     return GestureDetector(
-      onTap: () => Navigator.push(
+      onTap: hasImage
+          ? () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ImageFullscreenView(imageUrl: product['image_url'] ?? ''),
+          builder: (_) => ImageFullscreenView(imageUrl: imageUrl),
         ),
-      ),
+      )
+          : null,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          product['image_url'] ?? '',
+        child: hasImage
+            ? Image.network(
+          imageUrl,
           width: 120,
           height: 120,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Container(
-            width: 120,
-            height: 120,
-            color: Colors.grey,
-            child: const Icon(Icons.image, color: Colors.white),
-          ),
-        ),
+          errorBuilder: (context, error, stackTrace) => _imageFallback(),
+        )
+            : _imageFallback(),
       ),
     );
   }
 
+  Widget _imageFallback() {
+    return Container(
+      width: 120,
+      height: 120,
+      color: Colors.grey[800],
+      child: const Icon(Icons.image_not_supported, color: Colors.white),
+    );
+  }
+
   Widget _buildText(Map<String, dynamic> product) {
+    final name = product['name']?.toString() ?? '';
+    final description = product['description']?.toString() ?? '';
+    final weight = product['weight']?.toString() ?? '';
+    final allergens = product['allergens']?.toString() ?? '';
+    final price = product['price'];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(product['name'] ?? '', style: const TextStyle(fontSize: 18, color: Colors.white)),
+          Text(name, style: const TextStyle(fontSize: 18, color: Colors.white)),
           const SizedBox(height: 4),
-          Text(product['description'] ?? '', style: const TextStyle(color: Colors.white70)),
+          if (description.isNotEmpty)
+            Text(description, style: const TextStyle(color: Colors.white70)),
           const SizedBox(height: 8),
-          if ((product['weight'] ?? '').isNotEmpty)
-            Text('Gramaj: ${product['weight']}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
-          if ((product['allergens'] ?? '').isNotEmpty)
-            Text('Alergeni: ${product['allergens']}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
-          if (product['price'] != null)
-            Text('Preț: ${product['price']} RON', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          if (weight.isNotEmpty)
+            Text('Gramaj: $weight', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+          if (allergens.isNotEmpty)
+            Text('Alergeni: $allergens', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+          if (price != null)
+            Text('Preț: $price RON', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ],
       ),
     );
