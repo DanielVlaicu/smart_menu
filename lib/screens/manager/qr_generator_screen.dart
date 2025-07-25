@@ -11,7 +11,7 @@ class QRGeneratorScreen extends StatelessWidget {
   final String uid;
   const QRGeneratorScreen({super.key, required this.uid});
 
-  String get qrData => 'https://smartmenu.app?client=true&uid=$uid';
+  String get qrData => 'https://smartmenu-d3e47.web.app?client=true&uid=$uid';
   final Color themeBlue = const Color(0xFFB8D8F8);
 
   Future<File> _generatePngFile() async {

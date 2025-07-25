@@ -18,22 +18,26 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   try {
-    // NU inițializează din nou dacă deja există
-    if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    }
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('✅ Firebase initialized');
   } catch (e) {
-    print('Firebase init error: $e');
+    print('‼️ Firebase init error: $e');
   }
 
   final params = Uri.base.queryParameters;
   final isClient = params['client'] == 'true';
   final uid = params['uid'];
 
-  runApp(RestaurantMenuApp(isClient: isClient, clientUid: uid));
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: RootSelector(isClient: isClient, clientUid: uid),
+    ),
+  );
 }
 
 class RestaurantMenuApp extends StatelessWidget {
@@ -92,5 +96,26 @@ class RestaurantMenuApp extends StatelessWidget {
         },
       },
     );
+  }
+}
+
+class RootSelector extends StatelessWidget {
+  final bool isClient;
+  final String? clientUid;
+
+  const RootSelector({super.key, required this.isClient, this.clientUid});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isClient && clientUid != null) {
+      return ClientMenuScreen(uid: clientUid!);
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const LoginScreen();
+    } else {
+      return DashboardScreen();
+    }
   }
 }

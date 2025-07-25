@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     appId: '1:141030912906:ios:8e99d108b0221148bc0e73',
     messagingSenderId: '141030912906',
     projectId: 'smartmenu-d3e47',
-    storageBucket: 'smartmenu-d3e47.firebasestorage.app',
+    storageBucket: 'smartmenu-d3e47.appspot.com',
     androidClientId: '141030912906-n8l3ac9gvgafvoujbt8fis2svrbbgbh1.apps.googleusercontent.com',
     iosClientId: '141030912906-ih9blc7g1f3fefuslh73h6lagpiff2cv.apps.googleusercontent.com',
     iosBundleId: 'com.example.smartMenu',
@@ -74,7 +74,7 @@ class DefaultFirebaseOptions {
     appId: '1:141030912906:ios:8e99d108b0221148bc0e73',
     messagingSenderId: '141030912906',
     projectId: 'smartmenu-d3e47',
-    storageBucket: 'smartmenu-d3e47.firebasestorage.app',
+    storageBucket: 'smartmenu-d3e47.appspot.com',
     androidClientId: '141030912906-n8l3ac9gvgafvoujbt8fis2svrbbgbh1.apps.googleusercontent.com',
     iosClientId: '141030912906-ih9blc7g1f3fefuslh73h6lagpiff2cv.apps.googleusercontent.com',
     iosBundleId: 'com.example.smartMenu',
@@ -86,7 +86,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '141030912906',
     projectId: 'smartmenu-d3e47',
     authDomain: 'smartmenu-d3e47.firebaseapp.com',
-    storageBucket: 'smartmenu-d3e47.firebasestorage.app',
+    storageBucket: 'smartmenu-d3e47.appspot.com',
     measurementId: 'G-GJKZPDHDQZ',
   );
 }
