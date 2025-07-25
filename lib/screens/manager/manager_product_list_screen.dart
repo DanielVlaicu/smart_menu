@@ -234,19 +234,47 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.subcategoryTitle),
-        backgroundColor: Colors.black,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addProduct,
-          )
-        ],
-      ),
+        appBar: AppBar(
+          title: Text(widget.subcategoryTitle),
+          backgroundColor: Colors.black,
+        ),
       body: ListView.builder(
-        itemCount: products.length,
+        itemCount: products.length + 1, // adăugăm un element în plus pentru butonul de adăugare
         itemBuilder: (context, index) {
+          if (index == products.length) {
+            // Ultimul item: cardul de adăugare produs
+            return Padding(
+              padding: const EdgeInsets.all(12),
+              child: GestureDetector(
+                onTap: _addProduct,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Card de + cu dimensiunea exactă a imaginii produsului
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.add, color: Colors.white, size: 40),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Adaugă un nou produs',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           final product = products[index];
           return Padding(
             padding: const EdgeInsets.all(12),
@@ -255,7 +283,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildImage(context, product, index), // 👈️ PASĂM index aici
+                    _buildImage(context, product, index),
                     const SizedBox(width: 12),
                     Expanded(child: _buildText(product)),
                   ],
