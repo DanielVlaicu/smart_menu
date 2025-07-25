@@ -31,12 +31,13 @@ void main() async {
   final params = Uri.base.queryParameters;
   final isClient = params['client'] == 'true';
   final uid = params['uid'];
-
+  print('📦 URL detectat: ${Uri.base}');
+  print('🔍 client: ${Uri.base.queryParameters['client']}');
+  print('🔍 uid: ${Uri.base.queryParameters['uid']}');
   runApp(RestaurantMenuApp(isClient: isClient, clientUid: uid));
 }
 
 class RestaurantMenuApp extends StatelessWidget {
-
   final bool isClient;
   final String? clientUid;
 
@@ -47,50 +48,68 @@ class RestaurantMenuApp extends StatelessWidget {
     return MaterialApp(
       title: 'Restaurant Menu',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      initialRoute: '/',
+      theme: ThemeData(primarySwatch: Colors.blue),
+
+      // Eliminăm `initialRoute` și `routes`, păstrăm doar `onGenerateRoute`
       onGenerateRoute: (settings) {
         final params = Uri.base.queryParameters;
         final isClient = params['client'] == 'true';
         final uid = params['uid'];
-        final user = FirebaseAuth.instance.currentUser;
 
+        // 👉 Dacă e acces direct din QR — intră în meniu public
         if (isClient && uid != null) {
-          return MaterialPageRoute(
-              builder: (_) => ClientMenuScreen(uid: uid));
+          print('🟢 Client QR link detectat, uid = $uid');
+          return MaterialPageRoute(builder: (_) => ClientMenuScreen(uid: uid));
         }
 
-        if (user == null) {
-          return MaterialPageRoute(
-              builder: (_) => const LoginScreen());
-        } else {
-          return MaterialPageRoute(
-              builder: (_) => DashboardScreen());
+        // 👉 Rutează în funcție de numele rutei
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(
+              builder: (_) => StreamBuilder(
+                stream: FirebaseAuth.instance.authStateChanges(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  return snapshot.hasData ? DashboardScreen() : const LoginScreen();
+                },
+              ),
+            );
+          case '/register':
+            return MaterialPageRoute(builder: (_) => const RegisterScreen());
+          case '/dashboard':
+            return MaterialPageRoute(builder: (_) => DashboardScreen());
+          case '/manager_menu_screen':
+            return MaterialPageRoute(builder: (_) => ManagerMenuScreen());
+          case '/edit_item':
+            return MaterialPageRoute(builder: (_) => EditItemScreen());
+          case '/analytics':
+            return MaterialPageRoute(builder: (_) => AnalyticsScreen());
+          case '/settings':
+            return MaterialPageRoute(builder: (_) => SettingsScreen());
+          case '/account_settings':
+            return MaterialPageRoute(builder: (_) => const AccountSettingsScreen());
+          case '/menu_settings':
+            return MaterialPageRoute(builder: (_) => const MenuSettingsScreen());
+          case '/menu2':
+            return MaterialPageRoute(builder: (_) => const ClientMenuScreen2());
+          case '/qr':
+            final uid = settings.arguments as String;
+            return MaterialPageRoute(builder: (_) => QRGeneratorScreen(uid: uid));
+          case '/menu':
+            final uid = settings.arguments as String;
+            return MaterialPageRoute(builder: (_) => ClientMenuScreen(uid: uid));
+          default:
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(
+                body: Center(child: Text('404 - Pagina nu există')),
+              ),
+            );
         }
-      },
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/dashboard': (context) => DashboardScreen(),
-        '/manager_menu_screen': (context) =>ManagerMenuScreen(),
-        '/edit_item': (context) => EditItemScreen(),
-        '/analytics': (context) => AnalyticsScreen(),
-        '/settings': (context) => SettingsScreen(),
-        '/account_settings': (context) => const AccountSettingsScreen(),
-        '/menu_settings': (context) => const MenuSettingsScreen(),
-        '/menu2': (context) => const ClientMenuScreen2(), /// meniu cu afisare dif mockup
-        '/qr': (context) {
-          final uid = ModalRoute.of(context)!.settings.arguments as String;
-          return QRGeneratorScreen(uid: uid);
-        },
-        '/menu': (context) {
-          final uid = ModalRoute.of(context)!.settings.arguments as String;
-          return ClientMenuScreen(uid: uid);
-        },
       },
     );
   }
 }
-

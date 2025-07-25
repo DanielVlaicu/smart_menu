@@ -24,7 +24,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
   }
 
   Future<void> fetchMenu() async {
-    final url = Uri.parse('https://smartmenu-d3e47.web.app/public-menu/${widget.uid}');
+    final url = Uri.parse('https://firebase-storage-141030912906.europe-west1.run.app/public-menu/${widget.uid}');
     try {
       final response = await http.get(url);
       print('Status: ${response.statusCode}');
@@ -151,22 +151,22 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: GestureDetector(
-                      onTap: () {
-                        final products = (item['products'] as List<dynamic>? ?? [])
-                            .map((e) => Map<String, dynamic>.from(e))
-                            .toList();
+                    onTap: () {
+                      final products = (item['products'] as List<dynamic>? ?? [])
+                          .map((e) => Map<String, dynamic>.from(e))
+                          .toList();
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductListScreen(
-                              subcategory: item['name'],
-                              category: currentCategory['name'],
-                              products: products,
-                            ),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductListScreen(
+                            subcategory: item['name'],
+                            category: currentCategory['name'],
+                            products: products,
                           ),
-                        );
-                      },
+                        ),
+                      );
+                    },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Stack(
