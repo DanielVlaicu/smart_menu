@@ -26,8 +26,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result == 'success') {
       Navigator.pushReplacementNamed(context, '/dashboard');
+    } else if (result!.contains('verificat')) {
+      // Mesaj special dacă emailul nu e confirmat
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verifică adresa de email. Linkul a fost retrimis.')),
+      );
+      setState(() => error = result);
     } else {
-      setState(() => error = result ?? 'Eroare necunoscută');
+      setState(() => error = result);
     }
   }
 

@@ -78,6 +78,8 @@ class RestaurantMenuApp extends StatelessWidget {
                 },
               ),
             );
+          case '/login':
+            return MaterialPageRoute(builder: (_) => const LoginScreen());
           case '/register':
             return MaterialPageRoute(builder: (_) => const RegisterScreen());
           case '/dashboard':
