@@ -23,9 +23,24 @@ def upload_image(uid: str, file_obj, filename: str, folder: str = "images") -> s
     image_id = f"{uuid4()}_{filename}"
     path = f"users/{uid}/{folder}/{image_id}"
     blob = bucket.blob(path)
+
+    # 🔐 Adaugă token unic și setează metadata explicit
+    token = str(uuid4())
+    blob.metadata = {
+        "firebaseStorageDownloadTokens": token
+    }
+
     blob.upload_from_file(file_obj, content_type="image/jpeg")
-    blob.make_public()
-    return blob.public_url
+    blob.patch()  # IMPORTANT: salvează metadatele
+
+    # 🔗 Construiește URL Firebase compatibil cu `alt=media` și token
+    encoded_path = path.replace("/", "%2F")
+    firebase_url = (
+        f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/{encoded_path}?alt=media&token={token}"
+    )
+
+    return firebase_url
+
 
 @router.post("/initialize")
 def initialize_user(uid: str = Depends(get_current_uid)):
