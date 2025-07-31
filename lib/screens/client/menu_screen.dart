@@ -83,7 +83,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
             flexibleSpace: FlexibleSpaceBar(
               title: Text(restaurantName, style: const TextStyle(color: Colors.white)),
               background: Image.network(
-                currentCategory['image_url'] ?? '',
+                'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   color: Colors.grey[800],
