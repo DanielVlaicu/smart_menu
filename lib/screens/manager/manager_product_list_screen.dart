@@ -386,10 +386,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
             ),
           );
         },
-        onLongPress: () {
-          print('Long press'); // test
-          _editProduct(index);
-        },
+
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: isLocalFile

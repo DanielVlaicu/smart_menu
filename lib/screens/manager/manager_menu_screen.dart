@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:smart_menu/utils/button_debouncer.dart';
 
 import '../../models/category.dart';
 import '../../models/subcategory.dart';
@@ -23,6 +24,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   List<Subcategory> currentSubcategories = [];
   bool isReordering = false;
   bool isReorderingCategories = false;
+  final ButtonDebouncer _saveDebouncer = ButtonDebouncer();
+  final ButtonDebouncer _addDebouncer = ButtonDebouncer();
+  final ButtonDebouncer _deleteDebouncer = ButtonDebouncer();
 
   @override
   void initState() {
@@ -35,6 +39,8 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
     final tempDir = await getTemporaryDirectory();
     final file = File('${tempDir.path}/$fileName');
     await file.writeAsBytes(byteData.buffer.asUint8List());
+
+
     return file;
   }
 
@@ -86,6 +92,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
               const SizedBox(height: 10),
               ElevatedButton.icon(
                 onPressed: () async {
+
                   FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
                     setInnerState(() {
