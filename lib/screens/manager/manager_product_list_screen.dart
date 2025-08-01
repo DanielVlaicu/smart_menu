@@ -37,8 +37,13 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
   Future<void> _loadProducts() async {
     try {
       final result = await ApiService.getProducts(categoryId: widget.categoryId, subcategoryId: widget.subcategoryId,);
+
+      final loadedProducts = result.map((e) => Product.fromJson(e)).toList();
+
+      loadedProducts.add(Product(id: 'add', name: '', description: '', imageUrl: '', weight: '', allergens: '', price: 0.0, visible: true,protected: false,subcategoryId: widget.subcategoryId, order: loadedProducts.length));
+
       setState(() {
-        products = result.map((e) => Product.fromJson(e)).toList();
+        products = loadedProducts;
       });
     } catch (e) {
       print('Eroare la încărcarea produselor: \$e');
@@ -121,8 +126,10 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
                 imagePath: imagePath,
                 weight: weightController.text,
                 allergens: allergenController.text,
-                price: priceController.text,
+                price: double.tryParse(priceController.text) ?? 0.0,
                 visible: isVisible,
+                order: index,
+                protected: false,
               );
               await _loadProducts();
               Navigator.pop(context);
@@ -211,8 +218,10 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
                   imagePath: imagePath!,
                   weight: weightController.text,
                   allergens: allergenController.text,
-                  price: priceController.text,
+                  price: double.tryParse(priceController.text) ?? 0.0,
                   visible: isVisible,
+                  order: products.length - 1,
+                    protected: false, // presupunem default false; setează cum vrei
                 );
                 await _loadProducts();
                 Navigator.pop(context);
@@ -234,123 +243,130 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-        appBar: AppBar(
-          title: Text(widget.subcategoryTitle),
-          backgroundColor: Colors.black,
-        ),
-      body: ListView.builder(
-        itemCount: products.length + 1, // adăugăm un element în plus pentru butonul de adăugare
-        itemBuilder: (context, index) {
-          if (index == products.length) {
-            // Ultimul item: cardul de adăugare produs
-            return Padding(
-              padding: const EdgeInsets.all(12),
-              child: GestureDetector(
-                onTap: _addProduct,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Card de + cu dimensiunea exactă a imaginii produsului
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.add, color: Colors.white, size: 40),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'Adaugă un nou produs',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+      appBar: AppBar(
+        title: Text(widget.subcategoryTitle),
+        backgroundColor: Colors.black,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ReorderableListView.builder(
+              itemCount: products.length,
+              onReorder: _onReorder,
+                itemBuilder: (context, index) {
+                  final product = products[index];
 
-          final product = products[index];
-          return Dismissible(
-            key: ValueKey(product.id),
-            background: Container(
-              color: Colors.green,
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: const Icon(Icons.edit, color: Colors.white),
-            ),
-            secondaryBackground: Container(
-              color: Colors.red,
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: const Icon(Icons.delete, color: Colors.white),
-            ),
-            confirmDismiss: (direction) async {
-              if (direction == DismissDirection.startToEnd) {
-                // Swipe la dreapta = editare
-                _editProduct(index);
-                return false; // nu dispare automat
-              } else if (direction == DismissDirection.endToStart) {
-                // Swipe la stânga = ștergere
-                final confirm = await showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Confirmă ștergerea'),
-                    content: const Text('Ești sigur că vrei să ștergi acest produs?'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Nu')),
-                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Da')),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  await ApiService.deleteProduct(
-                    categoryId: widget.categoryId,
-                    subcategoryId: widget.subcategoryId,
-                    id: product.id,
-                  );
-                  await _loadProducts();
-                  return true;
-                }
-                return false;
-              }
-              return false;
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Stack(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildImage(context, product, index),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildText(product)),
-                    ],
-                  ),
-                  if (!product.visible)
-                    Positioned(
-                      top: 4,
-                      left: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
+                  // Detecează cardul de adăugare (folosim id = 'add')
+                  if (product.id == 'add') {
+                    return Padding(
+                      key: ValueKey('add_button'),
+                      padding: const EdgeInsets.all(12),
+                      child: GestureDetector(
+                        onTap: _addProduct,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.add, color: Colors.white, size: 40),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Adaugă un nou produs',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: const Icon(Icons.visibility_off, size: 16, color: Colors.white),
+                      ),
+                    );
+                  }
+
+                  return Dismissible(
+                    key: ValueKey(product.id),
+                    background: Container(
+                      color: Colors.green,
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const Icon(Icons.edit, color: Colors.white),
+                    ),
+                    secondaryBackground: Container(
+                      color: Colors.red,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    confirmDismiss: (direction) async {
+                      if (direction == DismissDirection.startToEnd) {
+                        _editProduct(index);
+                        return false;
+                      } else if (direction == DismissDirection.endToStart) {
+                        final confirm = await showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Confirmă ștergerea'),
+                            content: const Text('Ești sigur că vrei să ștergi acest produs?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Nu')),
+                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Da')),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await ApiService.deleteProduct(
+                            categoryId: widget.categoryId,
+                            subcategoryId: widget.subcategoryId,
+                            id: product.id,
+                          );
+                          await _loadProducts();
+                          return true;
+                        }
+                        return false;
+                      }
+                      return false;
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Stack(
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildImage(context, product, index),
+                              const SizedBox(width: 12),
+                              Expanded(child: _buildText(product)),
+                              // Eliminăm iconița cu două linii
+                            ],
+                          ),
+                          if (!product.visible)
+                            Positioned(
+                              top: 4,
+                              left: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.visibility_off, size: 16, color: Colors.white),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                ],
-              ),
+                  );
+                },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -421,4 +437,28 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
     await file.writeAsBytes(byteData.buffer.asUint8List());
     return file;
   }
+
+
+  void _onReorder(int oldIndex, int newIndex) async {
+    if (oldIndex >= products.length - 1 || newIndex >= products.length - 1) return;
+
+    if (oldIndex < newIndex) newIndex--;
+
+    setState(() {
+      final item = products.removeAt(oldIndex);
+      products.insert(newIndex, item);
+    });
+
+    for (int i = 0; i < products.length - 1; i++) {
+      await ApiService.updateProductOrder(
+        categoryId: widget.categoryId,
+        subcategoryId: widget.subcategoryId,
+        id: products[i].id,
+        order: i,
+      );
+    }
+  }
+
+
+
 }

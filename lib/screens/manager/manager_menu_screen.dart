@@ -564,6 +564,18 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                   },
 
                   child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManagerProductListScreen(
+                            categoryId: categories[selectedCategoryIndex].id,
+                            subcategoryId: item.id,
+                            subcategoryTitle: item.title,
+                          ),
+                        ),
+                      );
+                    },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: ClipRRect(

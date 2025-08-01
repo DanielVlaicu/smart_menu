@@ -138,6 +138,18 @@ class ApiService {
     }
   }
 
+  static Future<void> reorderCategories(List<Map<String, dynamic>> ordered) async {
+    final headers = await _authHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/categories/reorder'),
+      headers: headers,
+      body: jsonEncode({'items': ordered}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Eroare la reordonarea categoriilor');
+    }
+  }
+
   /// === SUBCATEGORII ===
 
   static Future<List<Map<String, dynamic>>> getSubcategories(String categoryId) async {
@@ -262,10 +274,12 @@ class ApiService {
     required String imagePath,
     required String weight,
     required String allergens,
-    required String price,
+    required double price,
     required bool visible,
     required String categoryId,
     required String subcategoryId,
+    required int order,
+    required bool protected,
   }) async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
@@ -279,7 +293,7 @@ class ApiService {
       ..fields['description'] = description
       ..fields['weight'] = weight
       ..fields['allergens'] = allergens
-      ..fields['price'] = price
+      ..fields['price'] = price.toString()
       ..fields['visible'] = visible.toString()
       ..files.add(await http.MultipartFile.fromPath('file', imagePath));
 
@@ -298,10 +312,12 @@ class ApiService {
     required String imagePath,
     required String weight,
     required String allergens,
-    required String price,
+    required double price,
     required bool visible,
     required String categoryId,
     required String subcategoryId,
+    required int order,
+    required bool protected,
   }) async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
@@ -315,7 +331,7 @@ class ApiService {
       ..fields['description'] = description
       ..fields['weight'] = weight
       ..fields['allergens'] = allergens
-      ..fields['price'] = price
+      ..fields['price'] = price.toString()
       ..fields['visible'] = visible.toString();
 
     if (imagePath.startsWith('/')) {
@@ -343,4 +359,24 @@ class ApiService {
       throw Exception('Eroare la ștergerea produsului');
     }
   }
+
+
+  static Future<void> updateProductOrder({
+    required String categoryId,
+    required String subcategoryId,
+    required String id,
+    required int order,
+  }) async {
+    final headers = await _authHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/categories/$categoryId/subcategories/$subcategoryId/products/$id'),
+      headers: headers,
+      body: jsonEncode({'order': order}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Eroare la actualizarea ordinii produsului');
+    }
+  }
 }
+
+
