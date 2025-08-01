@@ -9,6 +9,7 @@ import '../../models/subcategory.dart';
 import '../../services/api_services.dart';
 import '../manager/manager_product_list_screen.dart';
 
+
 class ManagerMenuScreen extends StatefulWidget {
   const ManagerMenuScreen({super.key});
 
@@ -20,6 +21,8 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   int selectedCategoryIndex = 0;
   List<Category> categories = [];
   List<Subcategory> currentSubcategories = [];
+  bool isReordering = false;
+  bool isReorderingCategories = false;
 
   @override
   void initState() {
@@ -34,6 +37,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
     await file.writeAsBytes(byteData.buffer.asUint8List());
     return file;
   }
+
 
   Future<void> _loadCategories() async {
     try {
@@ -131,6 +135,69 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
     );
   }
 
+
+
+  void _toggleReorderMode() {
+    setState(() {
+      isReorderingCategories = !isReorderingCategories;
+    });
+  }
+
+  void _showEditCategoryDialog(Category category, int index) async {
+    final TextEditingController titleController = TextEditingController(text: category.title);
+    bool isVisible = category.visible;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setInnerState) => AlertDialog(
+          title: const Text('Editează categorie'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'Titlu categorie'),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Text("Vizibilă"),
+                  Switch(
+                    value: isVisible,
+                    onChanged: (value) {
+                      setInnerState(() => isVisible = value);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Anulează"),
+            ),
+            TextButton(
+              onPressed: () async {
+                // TODO: Trimite modificările la backend
+                setState(() {
+                  categories[index] = Category(
+                    id: category.id,
+                    title: titleController.text,
+                    imageUrl: category.imageUrl,
+                    visible: isVisible,
+                  );
+                });
+                Navigator.pop(context);
+              },
+              child: const Text("Salvează"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _editCategory(int index) async {
     final cat = categories[index];
@@ -379,6 +446,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
               },
               onAddCategory: _addCategory,
               onEditCategory: _editCategory,
+                onToggleReorderMode: _toggleReorderMode,
             ),
           ),
           SliverToBoxAdapter(
@@ -477,41 +545,36 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                     return false;
                   },
 
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Image.network(
-                            item.imageUrl,
-                            width: double.infinity,
-                            height: 160,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.image, color: Colors.white),
-                          ),
-                          Container(
-                            height: 160,
-                            color: Colors.black.withOpacity(0.4),
-                          ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                item.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                  child: GestureDetector(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Image.network(
+                              item.imageUrl,
+                              width: double.infinity,
+                              height: 160,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Colors.grey,
+                                height: 160,
+                                child: const Center(child: Icon(Icons.broken_image)),
                               ),
-                              if (!item.visible)
-                                const Icon(Icons.visibility_off, color: Colors.redAccent, size: 18),
-                            ],
-                          ),
-                        ],
+                            ),
+                            Container(
+                              color: Colors.black45,
+                              height: 160,
+                              alignment: Alignment.center,
+                              child: Text(
+                                item.title,
+                                style: const TextStyle(color: Colors.white, fontSize: 24),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -532,6 +595,7 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
   final Function(int) onSelectCategory;
   final VoidCallback onAddCategory;
   final Function(int) onEditCategory;
+  final VoidCallback onToggleReorderMode;
 
   _CategoryHeader({
     required this.categories,
@@ -539,6 +603,7 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
     required this.onSelectCategory,
     required this.onAddCategory,
     required this.onEditCategory,
+    required this.onToggleReorderMode,
   });
 
   @override
@@ -558,7 +623,35 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: GestureDetector(
                   onTap: () => onSelectCategory(index),
-                  onLongPress: () => onEditCategory(index),
+                  onLongPress: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Alege acțiunea'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.edit),
+                              title: const Text('Editează'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                onEditCategory(index);
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.swap_vert),
+                              title: const Text('Reordonează'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                onToggleReorderMode();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                   child: Container(
                     decoration: BoxDecoration(
                       color: index == selectedCategoryIndex ? Colors.blue : Colors.grey[900],
@@ -612,6 +705,7 @@ class _CategoryHeader extends SliverPersistentHeaderDelegate {
       ),
     );
   }
+
 
   @override
   double get maxExtent => 80;
