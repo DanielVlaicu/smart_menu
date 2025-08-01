@@ -328,17 +328,6 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              await ApiService.deleteSubcategory(
-                categoryId: categoryId,
-                id: subcategory.id,
-              );
-              await _loadSubcategories(categoryId);
-              Navigator.pop(context);
-            },
-            child: const Text('Șterge', style: TextStyle(color: Colors.red)),
-          ),
-          TextButton(
-            onPressed: () async {
               await ApiService.updateSubcategory(
                 id: subcategory.id,
                 title: titleController.text,
@@ -392,11 +381,30 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
               onEditCategory: _editCategory,
             ),
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-                  (context, index) {
+          SliverToBoxAdapter(
+            child: ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              key: PageStorageKey("subcategoryList"),
+              itemCount: items.length + 1,
+              onReorder: (oldIndex, newIndex) async {
+                if (oldIndex == 0 || newIndex == 0) return;
+
+                final from = oldIndex - 1;
+                final to = newIndex > oldIndex ? newIndex - 2 : newIndex - 1;
+
+                setState(() {
+                  final item = currentSubcategories.removeAt(from);
+                  currentSubcategories.insert(to, item);
+                });
+
+                // TODO: Apelează backend pentru a salva noua ordine
+                // await ApiService.reorderSubcategories(currentCategory.id, currentSubcategories);
+              },
+              itemBuilder: (context, index) {
                 if (index == 0) {
                   return Padding(
+                    key: const ValueKey("addButton"),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: GestureDetector(
                       onTap: () => _addSubcategory(currentCategory),
@@ -415,22 +423,62 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 }
 
                 final item = items[index - 1];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ManagerProductListScreen(
-                            subcategoryId: item.id,
-                            categoryId: currentCategory.id,
-                            subcategoryTitle: item.title, // nou
-                          ),
+
+                return Dismissible(
+                  key: ValueKey(item.id),
+                  background: Container(
+                    alignment: Alignment.centerLeft,
+                    color: Colors.red,
+                    padding: const EdgeInsets.only(left: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  secondaryBackground: Container(
+                    alignment: Alignment.centerRight,
+                    color: Colors.blue,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Icon(Icons.edit, color: Colors.white),
+                  ),
+                  confirmDismiss: (direction) async {
+                    if (direction == DismissDirection.startToEnd) {
+                      // Swipe dreapta -> ȘTERGERE cu confirmare
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Confirmare ștergere'),
+                          content: const Text('Ești sigur că vrei să ștergi această subcategorie?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Anulează'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Șterge', style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
                         ),
                       );
-                    },
-                    onLongPress: () => _editSubcategory(item, currentCategory.id),
+
+                      if (confirm == true) {
+                        await ApiService.deleteSubcategory(
+                          categoryId: currentCategory.id,
+                          id: item.id,
+                        );
+                        await _loadSubcategories(currentCategory.id);
+                        return true;
+                      } else {
+                        return false;
+                      }
+                    } else if (direction == DismissDirection.endToStart) {
+                      // Swipe stânga -> EDITARE
+                      _editSubcategory(item, currentCategory.id);
+                      return false; // nu eliminăm din listă
+                    }
+                    return false;
+                  },
+
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Stack(
@@ -469,9 +517,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                   ),
                 );
               },
-              childCount: items.length + 1,
             ),
-          ),
+          )
+          ,
         ],
       ),
     );

@@ -35,6 +35,12 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
           categories = (data['categories'] as List<dynamic>? ?? [])
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
+          for (final category in categories) {
+            final subs = category['subcategories'] as List<dynamic>? ?? [];
+            for (final sub in subs) {
+              print("🔹 Subcategorie ${sub['name']} - Image: ${sub['image_url']}");
+            }
+          }
           loading = false;
         });
       } else {
@@ -120,8 +126,11 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
-                                child: Image.network(
-                                  category['image_url'] ?? '',
+                                child:
+                                Image.network(
+                                  (category['image_url']?.isNotEmpty ?? false)
+                                      ? category['image_url']
+                                      : 'https://via.placeholder.com/150?text=Fără+imagine',
                                   width: 40,
                                   height: 40,
                                   fit: BoxFit.cover,
@@ -173,7 +182,9 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
                         alignment: Alignment.center,
                         children: [
                           Image.network(
-                            item['image_url'] ?? '',
+                            (item['image_url']?.isNotEmpty ?? false)
+                                ? item['image_url']
+                                : 'https://via.placeholder.com/300x160?text=Fără+imagine',
                             height: 160,
                             width: double.infinity,
                             fit: BoxFit.cover,
