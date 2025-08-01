@@ -9,6 +9,7 @@ class Product {
   final bool visible;
   final bool protected;
   final String subcategoryId;
+  final int order;
 
   Product({
     required this.id,
@@ -21,6 +22,7 @@ class Product {
     required this.visible,
     required this.protected,
     required this.subcategoryId,
+    required this.order,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -34,6 +36,7 @@ class Product {
     visible: json['visible'],
     protected: json['protected'],
     subcategoryId: json['subcategory_id'],
+    order: json['order'] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {

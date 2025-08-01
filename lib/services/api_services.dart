@@ -62,6 +62,7 @@ class ApiService {
     required String title,
     required String imagePath,
     required bool visible,
+    required int order,
   }) async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
@@ -73,6 +74,7 @@ class ApiService {
       ..headers['Authorization'] = 'Bearer $token'
       ..fields['name'] = title
       ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString()
       ..files.add(await http.MultipartFile.fromPath('file', imagePath));
 
     final response = await request.send();
@@ -122,6 +124,20 @@ class ApiService {
     }
   }
 
+  static Future<void> updateCategoryOrder({
+    required String id,
+    required int order,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/categories/$id/order'),
+      headers: await _authHeaders(),
+      body: {'order': order.toString()},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Eroare la actualizarea ordinii categoriei');
+    }
+  }
+
   /// === SUBCATEGORII ===
 
   static Future<List<Map<String, dynamic>>> getSubcategories(String categoryId) async {
@@ -142,6 +158,7 @@ class ApiService {
     required String imagePath,
     required bool visible,
     required String categoryId,
+    required int order,
   }) async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
@@ -153,6 +170,7 @@ class ApiService {
       ..headers['Authorization'] = 'Bearer $token'
       ..fields['name'] = title
       ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString()
       ..files.add(await http.MultipartFile.fromPath('file', imagePath));
 
     final response = await request.send();
@@ -203,6 +221,21 @@ class ApiService {
     );
     if (response.statusCode != 200) {
       throw Exception('Eroare la ștergerea subcategoriei');
+    }
+  }
+
+  static Future<void> updateSubcategoryOrder({
+    required String categoryId,
+    required String id,
+    required int order,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/categories/$categoryId/subcategories/$id/order'),
+      headers: await _authHeaders(),
+      body: {'order': order.toString()},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Eroare la actualizarea ordinii subcategoriei');
     }
   }
 

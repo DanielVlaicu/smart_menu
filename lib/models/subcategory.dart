@@ -4,6 +4,7 @@ class Subcategory {
   final String imageUrl;
   final bool visible;
   final String categoryId;
+  final int order;
 
   Subcategory({
     required this.id,
@@ -11,6 +12,7 @@ class Subcategory {
     required this.imageUrl,
     required this.visible,
     required this.categoryId,
+    required this.order,
   });
 
   factory Subcategory.fromJson(Map<String, dynamic> json) => Subcategory(
@@ -19,6 +21,7 @@ class Subcategory {
     imageUrl: json['image_url'],
     visible: json['visible'],
     categoryId: json['category_id'],
+      order: json['order'] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -27,5 +30,6 @@ class Subcategory {
     'image_url': imageUrl,
     'visible': visible,
     'category_id': categoryId,
+    'order': order,
   };
 }

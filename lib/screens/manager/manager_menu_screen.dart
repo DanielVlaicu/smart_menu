@@ -122,6 +122,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                     title: titleController.text,
                     imagePath: finalPath,
                     visible: isVisible,
+                    order: categories.length,
                   );
                   await _loadCategories();
                 }
@@ -135,7 +136,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
     );
   }
 
-
+  Future<void> _saveCategoryOrder() async {
+    for (int i = 0; i < categories.length; i++) {
+      await ApiService.updateCategoryOrder(id: categories[i].id, order: i);
+    }
+  }
 
   void _toggleReorderMode() {
     setState(() {
@@ -187,6 +192,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                     title: titleController.text,
                     imageUrl: category.imageUrl,
                     visible: isVisible,
+                    order: categories.length,
                   );
                 });
                 Navigator.pop(context);
@@ -253,6 +259,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                   title: titleController.text,
                   imagePath: imagePath,
                   visible: isVisible,
+
                 );
                 await _loadCategories();
                 Navigator.of(context).pop();
@@ -271,6 +278,16 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
         );
       },
     );
+  }
+
+  Future<void> _saveSubcategoryOrder() async {
+    for (int i = 0; i < currentSubcategories.length; i++) {
+      await ApiService.updateSubcategoryOrder(
+        categoryId: categories[selectedCategoryIndex].id,
+        id: currentSubcategories[i].id,
+        order: i,
+      );
+    }
   }
 
   void _addSubcategory(Category category) async {
@@ -330,6 +347,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                     imagePath: finalPath,
                     visible: isVisible,
                     categoryId: category.id,
+                    order: currentSubcategories.length,
                   );
                   await _loadSubcategories(category.id);
                 }
