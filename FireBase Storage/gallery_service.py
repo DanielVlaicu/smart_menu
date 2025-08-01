@@ -114,7 +114,8 @@ def get_categories(uid: str = Depends(get_current_uid)):
         "title": doc.to_dict().get("name"),
         "image_url": doc.to_dict().get("imageUrl"),
         "visible": doc.to_dict().get("visible", True),
-        "protected": doc.to_dict().get("protected", False)
+        "protected": doc.to_dict().get("protected", False),
+        "order": doc.to_dict().get("order", 0)
     } for doc in cats]
 
 @router.put("/categories/{category_id}")
@@ -205,7 +206,8 @@ def get_subcategories(category_id: str, uid: str = Depends(get_current_uid)):
         "image_url": doc.to_dict().get("imageUrl"),
         "visible": doc.to_dict().get("visible", True),
         "protected": doc.to_dict().get("protected", False),
-        "category_id": category_id
+        "category_id": category_id,
+        "order": doc.to_dict().get("order", 0)
     } for doc in subs]
 
 @router.put("/categories/{category_id}/subcategories/{subcategory_id}")
@@ -304,7 +306,8 @@ def get_products(category_id: str, subcategory_id: str, uid: str = Depends(get_c
         "image_url": doc.to_dict().get("imageUrl"),
         "visible": doc.to_dict().get("visible", True),
         "protected": doc.to_dict().get("protected", False),
-        "subcategory_id": subcategory_id
+        "subcategory_id": subcategory_id,
+        "order": doc.to_dict().get("order", 0)
     } for doc in products]
 
 @router.put("/categories/{category_id}/subcategories/{subcategory_id}/products/{product_id}")
