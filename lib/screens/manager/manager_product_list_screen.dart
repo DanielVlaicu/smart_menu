@@ -276,32 +276,78 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> {
           }
 
           final product = products[index];
-          return Padding(
-            padding: const EdgeInsets.all(12),
-            child: Stack(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildImage(context, product, index),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildText(product)),
-                  ],
-                ),
-                if (!product.visible)
-                  Positioned(
-                    top: 4,
-                    left: 4,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.visibility_off, size: 16, color: Colors.white),
-                    ),
+          return Dismissible(
+            key: ValueKey(product.id),
+            background: Container(
+              color: Colors.green,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: const Icon(Icons.edit, color: Colors.white),
+            ),
+            secondaryBackground: Container(
+              color: Colors.red,
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            confirmDismiss: (direction) async {
+              if (direction == DismissDirection.startToEnd) {
+                // Swipe la dreapta = editare
+                _editProduct(index);
+                return false; // nu dispare automat
+              } else if (direction == DismissDirection.endToStart) {
+                // Swipe la stânga = ștergere
+                final confirm = await showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Confirmă ștergerea'),
+                    content: const Text('Ești sigur că vrei să ștergi acest produs?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Nu')),
+                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Da')),
+                    ],
                   ),
-              ],
+                );
+                if (confirm == true) {
+                  await ApiService.deleteProduct(
+                    categoryId: widget.categoryId,
+                    subcategoryId: widget.subcategoryId,
+                    id: product.id,
+                  );
+                  await _loadProducts();
+                  return true;
+                }
+                return false;
+              }
+              return false;
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Stack(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildImage(context, product, index),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildText(product)),
+                    ],
+                  ),
+                  if (!product.visible)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.visibility_off, size: 16, color: Colors.white),
+                      ),
+                    ),
+                ],
+              ),
             ),
           );
         },

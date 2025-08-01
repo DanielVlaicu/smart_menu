@@ -446,7 +446,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
               },
               onAddCategory: _addCategory,
               onEditCategory: _editCategory,
-                onToggleReorderMode: _toggleReorderMode,
+              onToggleReorderMode: _toggleReorderMode,
             ),
           ),
           SliverToBoxAdapter(
