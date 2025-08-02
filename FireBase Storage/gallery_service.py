@@ -50,24 +50,29 @@ def initialize_user(uid: str = Depends(get_current_uid)):
     if existing and existing.get("initialized") == True:
         return {"message": "Deja inițializat"}
 
+    # Categorie inițială
     category_ref = user_ref.collection("categories").document()
     category_ref.set({
         "name": "Food",
         "imageUrl": "",
         "visible": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "protected": True
+        "protected": True,
+        "order": 0  # ✅
     })
 
+    # Subcategorie inițială
     subcategory_ref = category_ref.collection("subcategories").document()
     subcategory_ref.set({
         "name": "Starter rece",
         "imageUrl": "",
         "visible": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "protected": True
+        "protected": True,
+        "order": 0  # ✅
     })
 
+    # Produs inițial
     subcategory_ref.collection("products").document().set({
         "name": "Crochete",
         "price": 0.0,
@@ -77,11 +82,13 @@ def initialize_user(uid: str = Depends(get_current_uid)):
         "imageUrl": "",
         "visible": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "protected": True
+        "protected": True,
+        "order": 0  # ✅
     })
 
     user_ref.set({"initialized": True}, merge=True)
     return {"message": "User initialized cu structura default"}
+
 
 # ------------------ CATEGORII ------------------
 
@@ -94,14 +101,22 @@ def create_category(
 ):
     db = get_firestore()
     image_url = upload_image(uid, file.file, file.filename, folder="categories")
-    cat_doc = db.collection("users").document(uid).collection("categories").document()
+
+    # 🔢 Calculează poziția următoare
+    cats_ref = db.collection("users").document(uid).collection("categories")
+    existing = list(cats_ref.stream())
+    next_order = len(existing)
+
+    # ✅ Salvează categoria cu câmpul `order`
+    cat_doc = cats_ref.document()
     cat_doc.set({
         "name": name,
         "imageUrl": image_url,
         "visible": visible,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "order": 0  # default
+        "order": next_order
     })
+
     return {"message": "Categorie creată", "id": cat_doc.id, "image_url": image_url}
 
 @router.get("/categories", response_model=List[dict])
@@ -114,8 +129,7 @@ def get_categories(uid: str = Depends(get_current_uid)):
         "title": doc.to_dict().get("name"),
         "image_url": doc.to_dict().get("imageUrl"),
         "visible": doc.to_dict().get("visible", True),
-        "protected": doc.to_dict().get("protected", False),
-        "order": doc.to_dict().get("order", 0)
+        "protected": doc.to_dict().get("protected", False)
     } for doc in cats]
 
 @router.put("/categories/{category_id}")
@@ -123,11 +137,19 @@ def update_category(
     category_id: str,
     name: str = Form(...),
     visible: bool = Form(True),
+    order: int = Form(None),  # 🆕 adăugat
     file: UploadFile = File(None),
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-    update_data = {"name": name, "visible": visible}
+    update_data = {
+        "name": name,
+        "visible": visible,
+    }
+
+    if order is not None:  # 🆕 doar dacă e furnizat
+        update_data["order"] = order
+
     if file:
         image_url = upload_image(uid, file.file, file.filename, folder="categories")
         update_data["imageUrl"] = image_url
@@ -155,26 +177,27 @@ def create_subcategory(
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-
-    # Upload imagine pentru subcategorie
     image_url = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
 
-    # Crează documentul pentru subcategorie
-    subcat_doc = (
+    # 🔢 Calculează ordinea subcategoriilor existente
+    subcats_ref = (
         db.collection("users").document(uid)
-          .collection("categories").document(category_id)
-          .collection("subcategories").document()
+        .collection("categories").document(category_id)
+        .collection("subcategories")
     )
+    existing = list(subcats_ref.stream())
+    next_order = len(existing)
 
+    subcat_doc = subcats_ref.document()
     subcat_doc.set({
         "name": name,
         "imageUrl": image_url,
         "visible": visible,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "order": 0  # default
+        "order": next_order
     })
 
-    # 🆕 Creează produs implicit în subcategorie
+    # Creează produs implicit
     subcat_doc.collection("products").document().set({
         "name": "Produs implicit",
         "price": 0.0,
@@ -184,10 +207,12 @@ def create_subcategory(
         "imageUrl": "",
         "visible": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "protected": True
+        "protected": True,
+        "order": 0
     })
 
     return {"message": "Subcategorie creată", "id": subcat_doc.id, "image_url": image_url}
+
 
 
 @router.get("/categories/{category_id}/subcategories", response_model=List[dict])
@@ -199,15 +224,13 @@ def get_subcategories(category_id: str, uid: str = Depends(get_current_uid)):
           .collection("subcategories")
     )
     subs = subs_ref.order_by("order").stream()
-
     return [{
         "id": doc.id,
         "title": doc.to_dict().get("name"),
         "image_url": doc.to_dict().get("imageUrl"),
         "visible": doc.to_dict().get("visible", True),
         "protected": doc.to_dict().get("protected", False),
-        "category_id": category_id,
-        "order": doc.to_dict().get("order", 0)
+        "category_id": category_id
     } for doc in subs]
 
 @router.put("/categories/{category_id}/subcategories/{subcategory_id}")
@@ -216,24 +239,35 @@ def update_subcategory(
     subcategory_id: str,
     name: str = Form(...),
     visible: bool = Form(True),
+    order: int = Form(None),  # 🆕 suport pentru ordine
     file: UploadFile = File(None),
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-    subcat_ref = (
-        db.collection("users").document(uid)
-          .collection("categories").document(category_id)
-          .collection("subcategories").document(subcategory_id)
-    )
-    if not subcat_ref.get().exists:
-        raise HTTPException(status_code=404, detail="Subcategoria nu există")
-    update_data = {"name": name, "visible": visible}
+    update_data = {
+        "name": name,
+        "visible": visible
+    }
+
+    if order is not None:
+        update_data["order"] = order
+
     if file:
         image_url = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
         update_data["imageUrl"] = image_url
 
+    subcat_ref = (
+        db.collection("users").document(uid)
+        .collection("categories").document(category_id)
+        .collection("subcategories").document(subcategory_id)
+    )
+
+    if not subcat_ref.get().exists:
+        raise HTTPException(status_code=404, detail="Subcategoria nu există")
+
     subcat_ref.update(update_data)
     return {"message": "Subcategorie modificată"}
+
 
 @router.delete("/categories/{category_id}/subcategories/{subcategory_id}")
 def delete_subcategory(category_id: str, subcategory_id: str, uid: str = Depends(get_current_uid)):
@@ -267,12 +301,18 @@ def create_product(
     db = get_firestore()
     image_url = upload_image(uid, file.file, file.filename,
                              folder=f"categories/{category_id}/subcategories/{subcategory_id}/products")
-    prod_doc = (
+
+    # 🔢 Calculează ordinea
+    prod_ref = (
         db.collection("users").document(uid)
-          .collection("categories").document(category_id)
-          .collection("subcategories").document(subcategory_id)
-          .collection("products").document()
+        .collection("categories").document(category_id)
+        .collection("subcategories").document(subcategory_id)
+        .collection("products")
     )
+    existing = list(prod_ref.stream())
+    next_order = len(existing)
+
+    prod_doc = prod_ref.document()
     prod_doc.set({
         "name": name,
         "price": price,
@@ -282,9 +322,11 @@ def create_product(
         "visible": visible,
         "imageUrl": image_url,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "order": 0  # default
+        "order": next_order
     })
+
     return {"message": "Produs creat", "id": prod_doc.id, "image_url": image_url}
+
 
 @router.get("/categories/{category_id}/subcategories/{subcategory_id}/products", response_model=List[dict])
 def get_products(category_id: str, subcategory_id: str, uid: str = Depends(get_current_uid)):
@@ -306,8 +348,7 @@ def get_products(category_id: str, subcategory_id: str, uid: str = Depends(get_c
         "image_url": doc.to_dict().get("imageUrl"),
         "visible": doc.to_dict().get("visible", True),
         "protected": doc.to_dict().get("protected", False),
-        "subcategory_id": subcategory_id,
-        "order": doc.to_dict().get("order", 0)
+        "subcategory_id": subcategory_id
     } for doc in products]
 
 @router.put("/categories/{category_id}/subcategories/{subcategory_id}/products/{product_id}")
@@ -321,6 +362,7 @@ def update_product(
     weight: str = Form(""),
     allergens: str = Form(""),
     visible: bool = Form(True),
+    order: int = Form(None),  # 🆕 suport pentru ordine
     file: UploadFile = File(None),
     uid: str = Depends(get_current_uid)
 ):
@@ -333,6 +375,10 @@ def update_product(
         "allergens": allergens,
         "visible": visible
     }
+
+    if order is not None:
+        update_data["order"] = order
+
     if file:
         image_url = upload_image(uid, file.file, file.filename,
                                  folder=f"categories/{category_id}/subcategories/{subcategory_id}/products")
@@ -340,12 +386,14 @@ def update_product(
 
     (
         db.collection("users").document(uid)
-          .collection("categories").document(category_id)
-          .collection("subcategories").document(subcategory_id)
-          .collection("products").document(product_id)
-          .update(update_data)
+        .collection("categories").document(category_id)
+        .collection("subcategories").document(subcategory_id)
+        .collection("products").document(product_id)
+        .update(update_data)
     )
+
     return {"message": "Produs modificat"}
+
 
 @router.delete("/categories/{category_id}/subcategories/{subcategory_id}/products/{product_id}")
 def delete_product(category_id: str, subcategory_id: str, product_id: str, uid: str = Depends(get_current_uid)):
@@ -367,8 +415,9 @@ def get_public_menu(uid: str):
         raise HTTPException(status_code=404, detail="Restaurantul nu există")
 
     restaurant_name = user_doc.to_dict().get("restaurant_name", "Meniu")
+
     categories_ref = db.collection("users").document(uid).collection("categories")
-    categories = categories_ref.order_by("order").stream()
+    categories = categories_ref.order_by("order").stream()  # 🔁 ordonare după "order"
 
     result = []
     for cat_doc in categories:
@@ -384,7 +433,8 @@ def get_public_menu(uid: str):
         }
 
         subcat_ref = categories_ref.document(cat_doc.id).collection("subcategories")
-        subcats = subcat_ref.order_by("order").stream()
+        subcats = subcat_ref.order_by("order").stream()  # 🔁 ordonare după "order"
+
         for subcat_doc in subcats:
             subcat = subcat_doc.to_dict()
             if not subcat.get("visible", True):
@@ -398,7 +448,8 @@ def get_public_menu(uid: str):
             }
 
             prod_ref = subcat_ref.document(subcat_doc.id).collection("products")
-            prods = prod_ref.order_by("order").stream()
+            prods = prod_ref.order_by("order").stream()  # 🔁 ordonare după "order"
+
             for prod_doc in prods:
                 prod = prod_doc.to_dict()
                 if not prod.get("visible", True):
@@ -423,33 +474,3 @@ def get_public_menu(uid: str):
         "categories": result
     }
 
-
-@router.put("/categories/reorder")
-def reorder_categories(order_data: List[str], uid: str = Depends(get_current_uid)):
-    db = get_firestore()
-    batch = db.batch()
-    for index, cat_id in enumerate(order_data):
-        ref = db.collection("users").document(uid).collection("categories").document(cat_id)
-        batch.update(ref, {"order": index})
-    batch.commit()
-    return {"message": "Ordinea categoriilor actualizată"}
-
-@router.put("/categories/{category_id}/subcategories/reorder")
-def reorder_subcategories(category_id: str, order_data: List[str], uid: str = Depends(get_current_uid)):
-    db = get_firestore()
-    batch = db.batch()
-    for index, sub_id in enumerate(order_data):
-        ref = db.collection("users").document(uid).collection("categories").document(category_id).collection("subcategories").document(sub_id)
-        batch.update(ref, {"order": index})
-    batch.commit()
-    return {"message": "Ordinea subcategoriilor actualizată"}
-
-@router.put("/categories/{category_id}/subcategories/{subcategory_id}/products/reorder")
-def reorder_products(category_id: str, subcategory_id: str, order_data: List[str], uid: str = Depends(get_current_uid)):
-    db = get_firestore()
-    batch = db.batch()
-    for index, prod_id in enumerate(order_data):
-        ref = db.collection("users").document(uid).collection("categories").document(category_id).collection("subcategories").document(subcategory_id).collection("products").document(prod_id)
-        batch.update(ref, {"order": index})
-    batch.commit()
-    return {"message": "Ordinea produselor actualizată"}
