@@ -504,10 +504,17 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
     });
 
     for (int i = 0; i < products.length - 1; i++) {
+      final product = products[i];
       await ApiService.updateProductOrder(
         categoryId: widget.categoryId,
         subcategoryId: widget.subcategoryId,
-        id: products[i].id,
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        weight: product.weight,
+        allergens: product.allergens,
+        price: product.price,
+        visible: product.visible,
         order: i,
       );
     }

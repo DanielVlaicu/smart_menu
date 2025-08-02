@@ -90,6 +90,7 @@ class ApiService {
     required String title,
     required String imagePath,
     required bool visible,
+    required int order,
   }) async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
@@ -100,7 +101,8 @@ class ApiService {
     )
       ..headers['Authorization'] = 'Bearer $token'
       ..fields['name'] = title
-      ..fields['visible'] = visible.toString();
+      ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString();
 
     if (imagePath.startsWith('/')) {
       request.files.add(await http.MultipartFile.fromPath('file', imagePath));
@@ -126,13 +128,23 @@ class ApiService {
 
   static Future<void> updateCategoryOrder({
     required String id,
+    required String title,
+    required bool visible,
     required int order,
   }) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/categories/$id/order'),
-      headers: await _authHeaders(),
-      body: {'order': order.toString()},
-    );
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token == null) throw Exception("Utilizator neautentificat");
+
+    final request = http.MultipartRequest(
+      'PUT',
+      Uri.parse('$baseUrl/categories/$id'),
+    )
+      ..headers['Authorization'] = 'Bearer $token'
+      ..fields['name'] = title
+      ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString();
+
+    final response = await request.send();
     if (response.statusCode != 200) {
       throw Exception('Eroare la actualizarea ordinii categoriei');
     }
@@ -198,6 +210,7 @@ class ApiService {
     required String title,
     required String imagePath,
     required bool visible,
+    required int order,
     required String categoryId,
   }) async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
@@ -209,7 +222,8 @@ class ApiService {
     )
       ..headers['Authorization'] = 'Bearer $token'
       ..fields['name'] = title
-      ..fields['visible'] = visible.toString();
+      ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString();
 
     if (imagePath.startsWith('/')) {
       request.files.add(await http.MultipartFile.fromPath('file', imagePath));
@@ -239,13 +253,23 @@ class ApiService {
   static Future<void> updateSubcategoryOrder({
     required String categoryId,
     required String id,
+    required String title,
+    required bool visible,
     required int order,
   }) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/categories/$categoryId/subcategories/$id/order'),
-      headers: await _authHeaders(),
-      body: {'order': order.toString()},
-    );
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token == null) throw Exception("Utilizator neautentificat");
+
+    final request = http.MultipartRequest(
+      'PUT',
+      Uri.parse('$baseUrl/categories/$categoryId/subcategories/$id'),
+    )
+      ..headers['Authorization'] = 'Bearer $token'
+      ..fields['name'] = title
+      ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString();
+
+    final response = await request.send();
     if (response.statusCode != 200) {
       throw Exception('Eroare la actualizarea ordinii subcategoriei');
     }
@@ -365,18 +389,36 @@ class ApiService {
     required String categoryId,
     required String subcategoryId,
     required String id,
+    required String name,
+    required String description,
+    required String weight,
+    required String allergens,
+    required double price,
+    required bool visible,
     required int order,
   }) async {
-    final headers = await _authHeaders();
-    final response = await http.put(
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token == null) throw Exception("Utilizator neautentificat");
+
+    final request = http.MultipartRequest(
+      'PUT',
       Uri.parse('$baseUrl/categories/$categoryId/subcategories/$subcategoryId/products/$id'),
-      headers: headers,
-      body: jsonEncode({'order': order}),
-    );
+    )
+      ..headers['Authorization'] = 'Bearer $token'
+      ..fields['name'] = name
+      ..fields['description'] = description
+      ..fields['weight'] = weight
+      ..fields['allergens'] = allergens
+      ..fields['price'] = price.toString()
+      ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString();
+
+    final response = await request.send();
     if (response.statusCode != 200) {
       throw Exception('Eroare la actualizarea ordinii produsului');
     }
   }
+
 }
 
 

@@ -145,7 +145,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
 
   Future<void> _saveCategoryOrder() async {
     for (int i = 0; i < categories.length; i++) {
-      await ApiService.updateCategoryOrder(id: categories[i].id, order: i);
+      await ApiService.updateCategoryOrder(id: categories[i].id,title: categories[i].title,visible: categories[i].visible, order: i);
     }
   }
 
@@ -266,6 +266,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                   title: titleController.text,
                   imagePath: imagePath,
                   visible: isVisible,
+                  order: cat.order,
 
                 );
                 await _loadCategories();
@@ -289,9 +290,12 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
 
   Future<void> _saveSubcategoryOrder() async {
     for (int i = 0; i < currentSubcategories.length; i++) {
+      final sub = currentSubcategories[i];
       await ApiService.updateSubcategoryOrder(
         categoryId: categories[selectedCategoryIndex].id,
-        id: currentSubcategories[i].id,
+        id: sub.id,
+        title: sub.title,
+        visible: sub.visible,
         order: i,
       );
     }
@@ -426,6 +430,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 imagePath: imagePath,
                 visible: isVisible,
                 categoryId: categoryId,
+                order: subcategory.order,
               );
               await _loadSubcategories(categoryId);
               Navigator.pop(context);
