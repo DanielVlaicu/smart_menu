@@ -138,7 +138,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                     title: titleController.text,
                     imagePath: finalPath,
                     visible: isVisible,
-                    order: categories.length,
+                      order: categories.length,
                   );
                   await _loadCategories();
                 }
@@ -226,7 +226,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                     title: titleController.text,
                     imageUrl: category.imageUrl,
                     visible: isVisible,
-                    order: categories.length,
+                    order: category.order,
                   );
                 });
                 Navigator.pop(context);
@@ -543,8 +543,18 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                   currentSubcategories.insert(to, item);
                 });
 
-                // TODO: Apelează backend pentru a salva noua ordine
-                // await ApiService.reorderSubcategories(currentCategory.id, currentSubcategories);
+                final categoryId = categories[selectedCategoryIndex].id;
+
+                for (int i = 0; i < currentSubcategories.length; i++) {
+                  final sub = currentSubcategories[i];
+                  await ApiService.updateSubcategoryOrder(
+                    categoryId: categoryId,
+                    id: sub.id,
+                    title: sub.title,
+                    visible: sub.visible,
+                    order: i,
+                  );
+                }
               },
               itemBuilder: (context, index) {
                 if (index == 0) {
