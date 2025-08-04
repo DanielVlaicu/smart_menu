@@ -85,9 +85,51 @@ def initialize_user(uid: str = Depends(get_current_uid)):
         "protected": True,
         "order": 0  # ✅
     })
+    # 🆕 Branding implicit
+    user_ref.set({
+        "initialized": True,
+        "restaurant_name": "Meniu",
+        "headerImageUrl": ""
+    }, merge=True)
 
     user_ref.set({"initialized": True}, merge=True)
     return {"message": "User initialized cu structura default"}
+
+# ------------------ NUMELE RESTAURANTULUI SI POZA BACKGROUND ------------------
+
+@router.get("/branding")
+def get_branding(uid: str = Depends(get_current_uid)):
+    db = get_firestore()
+    user_doc = db.collection("users").document(uid).get()
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User inexistent")
+    data = user_doc.to_dict() or {}
+    return {
+        "restaurant_name": data.get("restaurant_name", "Meniu"),
+        "header_image_url": data.get("headerImageUrl", "")
+    }
+
+@router.put("/branding")
+def update_branding(
+    name: str = Form(None),
+    file: UploadFile = File(None),
+    uid: str = Depends(get_current_uid)
+):
+    db = get_firestore()
+    update_data = {}
+
+    if name is not None:
+        update_data["restaurant_name"] = name
+
+    if file is not None:
+        image_url = upload_image(uid, file.file, file.filename, folder="branding")
+        update_data["headerImageUrl"] = image_url
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nimic de actualizat")
+
+    db.collection("users").document(uid).set(update_data, merge=True)
+    return {"message": "Branding actualizat", **update_data}
 
 
 # ------------------ CATEGORII ------------------
@@ -430,14 +472,19 @@ def delete_product(category_id: str, subcategory_id: str, product_id: str, uid: 
 @router.get("/public-menu/{uid}")
 def get_public_menu(uid: str):
     db = get_firestore()
+
+    # ── Branding (nume + poză antet) ────────────────────────────────────────────
     user_doc = db.collection("users").document(uid).get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="Restaurantul nu există")
 
-    restaurant_name = user_doc.to_dict().get("restaurant_name", "Meniu")
+    user_data = user_doc.to_dict() or {}
+    restaurant_name = user_data.get("restaurant_name", "Meniu")
+    header_image_url = user_data.get("headerImageUrl", "")
 
+    # ── Conținut meniu (categorii / subcategorii / produse) ────────────────────
     categories_ref = db.collection("users").document(uid).collection("categories")
-    categories = categories_ref.order_by("order").stream()  # 🔁 ordonare după "order"
+    categories = categories_ref.order_by("order").stream()
 
     result = []
     for cat_doc in categories:
@@ -453,7 +500,7 @@ def get_public_menu(uid: str):
         }
 
         subcat_ref = categories_ref.document(cat_doc.id).collection("subcategories")
-        subcats = subcat_ref.order_by("order").stream()  # 🔁 ordonare după "order"
+        subcats = subcat_ref.order_by("order").stream()
 
         for subcat_doc in subcats:
             subcat = subcat_doc.to_dict()
@@ -468,7 +515,7 @@ def get_public_menu(uid: str):
             }
 
             prod_ref = subcat_ref.document(subcat_doc.id).collection("products")
-            prods = prod_ref.order_by("order").stream()  # 🔁 ordonare după "order"
+            prods = prod_ref.order_by("order").stream()
 
             for prod_doc in prods:
                 prod = prod_doc.to_dict()
@@ -489,8 +536,11 @@ def get_public_menu(uid: str):
 
         result.append(cat_data)
 
+    # ── Răspuns cu branding inclus ─────────────────────────────────────────────
     return {
         "restaurant_name": restaurant_name,
+        "header_image_url": header_image_url,   # ← branding
         "categories": result
     }
+
 
