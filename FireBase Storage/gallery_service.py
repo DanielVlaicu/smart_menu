@@ -274,16 +274,33 @@ def update_subcategory(
 @router.delete("/categories/{category_id}/subcategories/{subcategory_id}")
 def delete_subcategory(category_id: str, subcategory_id: str, uid: str = Depends(get_current_uid)):
     db = get_firestore()
-    doc = db.collection("users").document(uid).collection("categories").document(category_id).collection("subcategories").document(subcategory_id).get()
-    if doc.exists and doc.to_dict().get("protected"):
-        raise HTTPException(status_code=403, detail="Această subcategorie nu poate fi ștearsă")
-    (
+
+    subcat_ref = (
         db.collection("users").document(uid)
           .collection("categories").document(category_id)
           .collection("subcategories").document(subcategory_id)
-          .delete()
     )
+
+    doc = subcat_ref.get()
+    if doc.exists and doc.to_dict().get("protected"):
+        raise HTTPException(status_code=403, detail="Această subcategorie nu poate fi ștearsă")
+
+    # 🔁 Șterge toate produsele din subcategorie, în batch-uri
+    products_ref = subcat_ref.collection("products")
+    while True:
+        to_delete = list(products_ref.limit(200).stream())
+        if not to_delete:
+            break
+        batch = db.batch()
+        for p in to_delete:
+            batch.delete(p.reference)
+        batch.commit()
+
+    # 🗑️ După ce nu mai are subcolecții, șterge documentul subcategoriei
+    subcat_ref.delete()
+
     return {"message": "Subcategorie ștearsă"}
+
 
 # ------------------ PRODUSE ------------------
 
