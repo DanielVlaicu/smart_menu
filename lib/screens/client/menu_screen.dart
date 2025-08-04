@@ -16,6 +16,8 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
   List<Map<String, dynamic>> categories = [];
   bool loading = true;
   String restaurantName = "Meniu";
+  String headerImageUrl = '';
+
 
   @override
   void initState() {
@@ -32,6 +34,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
         final data = json.decode(response.body);
         setState(() {
           restaurantName = data['restaurant_name'] ?? "Meniu";
+          headerImageUrl = data['header_image_url'] ?? '';
           categories = (data['categories'] as List<dynamic>? ?? [])
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
@@ -80,7 +83,10 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: CustomScrollView(
+        body: RefreshIndicator(
+        onRefresh: fetchMenu,
+        child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(), // important pentru RefreshIndicator
         slivers: [
           SliverAppBar(
             pinned: true,
@@ -89,7 +95,9 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
             flexibleSpace: FlexibleSpaceBar(
               title: Text(restaurantName, style: const TextStyle(color: Colors.white)),
               background: Image.network(
-                'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
+                headerImageUrl.isNotEmpty
+                    ? headerImageUrl
+                    : 'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   color: Colors.grey[800],
@@ -218,6 +226,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
           ),
         ],
       ),
+        ),
     );
   }
 }

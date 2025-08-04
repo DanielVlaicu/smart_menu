@@ -425,6 +425,44 @@ class ApiService {
     }
   }
 
+  ///////// Nume Brand si background restaurant
+
+
+// GET /branding
+
+  static Future<Map<String, dynamic>> getBranding() async {
+    final headers = await _authHeaders();
+    final resp = await http.get(Uri.parse('$baseUrl/branding'), headers: headers);
+    if (resp.statusCode != 200) {
+      throw Exception('Eroare la preluarea brandingului');
+    }
+    return jsonDecode(resp.body) as Map<String, dynamic>;
+  }
+
+// PUT /branding (nume și/sau imagine)
+  static Future<Map<String, dynamic>> updateBranding({
+    String? name,
+    String? imagePath,
+  }) async {
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token == null) throw Exception("Utilizator neautentificat");
+
+    final req = http.MultipartRequest('PUT', Uri.parse('$baseUrl/branding'))
+      ..headers['Authorization'] = 'Bearer $token';
+
+    if (name != null) req.fields['name'] = name;
+    if (imagePath != null && imagePath.isNotEmpty) {
+      req.files.add(await http.MultipartFile.fromPath('file', imagePath));
+    }
+
+    final resp = await req.send();
+    final body = await resp.stream.bytesToString();
+    if (resp.statusCode != 200) {
+      throw Exception('Eroare la actualizarea brandingului: $body');
+    }
+    return jsonDecode(body) as Map<String, dynamic>;
+  }
+
 }
 
 

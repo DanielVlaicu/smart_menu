@@ -9,7 +9,8 @@ import '../../models/category.dart';
 import '../../models/subcategory.dart';
 import '../../services/api_services.dart';
 import '../manager/manager_product_list_screen.dart';
-
+import '../utils/auto_scroll_on_drag_mixin.dart';
+import 'package:flutter/gestures.dart';
 
 class ManagerMenuScreen extends StatefulWidget {
   const ManagerMenuScreen({super.key});
@@ -18,12 +19,14 @@ class ManagerMenuScreen extends StatefulWidget {
   State<ManagerMenuScreen> createState() => _ManagerMenuScreenState();
 }
 
-class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
+class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOnDragMixin {
   int selectedCategoryIndex = 0;
   List<Category> categories = [];
   List<Subcategory> currentSubcategories = [];
   bool isReordering = false;
   bool isReorderingCategories = false;
+  String _restaurantName = '';
+  String _backgroundImageUrl = '';
   final ButtonDebouncer _saveDebouncer = ButtonDebouncer();
   final ButtonDebouncer _addDebouncer = ButtonDebouncer();
   final ButtonDebouncer _deleteDebouncer = ButtonDebouncer();
@@ -31,6 +34,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   @override
   void initState() {
     super.initState();
+    _loadBranding();
     _loadCategories();
   }
 
@@ -42,6 +46,18 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
 
 
     return file;
+  }
+
+  Future<void> _loadBranding() async {
+    try {
+      final data = await ApiService.getBranding();
+      setState(() {
+        _restaurantName = data['restaurant_name'] ?? 'Nume restaurant';
+        _backgroundImageUrl = data['header_image_url'] ?? '';
+      });
+    } catch (e) {
+      debugPrint('Eroare la branding: $e');
+    }
   }
 
 
@@ -315,18 +331,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
     );
   }
 
-  Future<void> _saveSubcategoryOrder() async {
-    for (int i = 0; i < currentSubcategories.length; i++) {
-      final sub = currentSubcategories[i];
-      await ApiService.updateSubcategoryOrder(
-        categoryId: categories[selectedCategoryIndex].id,
-        id: sub.id,
-        title: sub.title,
-        visible: sub.visible,
-        order: i,
-      );
-    }
-  }
+
 
   void _addSubcategory(Category category) async {
     final TextEditingController titleController = TextEditingController();
@@ -469,25 +474,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
     );
   }
 
-  void _reorderSubcategories(int oldIndex, int newIndex) async {
-    setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
-      final item = currentSubcategories.removeAt(oldIndex);
-      currentSubcategories.insert(newIndex, item);
-    });
 
-    final categoryId = categories[selectedCategoryIndex].id;
-
-    for (int i = 0; i < currentSubcategories.length; i++) {
-      await ApiService.updateSubcategoryOrder(
-        categoryId: categoryId,
-        id: currentSubcategories[i].id,
-        title: currentSubcategories[i].title,
-        visible: currentSubcategories[i].visible,
-        order: i,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -496,19 +483,31 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: currentCategory == null
-          ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
+      body: currentCategory == null ?
+        const Center(child: CircularProgressIndicator()) :
+         CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
             expandedHeight: 200,
             backgroundColor: Colors.black,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text('The Manor', style: TextStyle(color: Colors.white)),
-              background: Image.network(
-                'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
-                fit: BoxFit.cover,
+              title: GestureDetector(
+                onLongPress: _editRestaurantName,
+                child: Text(
+                  _restaurantName,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              background: GestureDetector(
+                onLongPress: _editRestaurantBackground,
+                child: _backgroundImageUrl.isEmpty
+                    ? Container(color: Colors.grey)
+                    : Image.network(
+                  _backgroundImageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, _, __) => Container(color: Colors.grey),
+                ),
               ),
             ),
           ),
@@ -527,9 +526,12 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
             ),
           ),
           SliverToBoxAdapter(
+            child: Listener(
+              onPointerMove: autoScrollDuringDrag,
             child: ReorderableListView.builder(
+              scrollController: scrollController, // folosește controllerul din mixin
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const ClampingScrollPhysics(), //  permite scroll controlabil
               key: PageStorageKey("subcategoryList"),
               itemCount: items.length + 1,
               onReorder: (oldIndex, newIndex) async {
@@ -680,13 +682,65 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
                 );
               },
             ),
+            ),
           )
           ,
         ],
       ),
     );
   }
-}
+
+    void _editRestaurantName() async {
+      final controller = TextEditingController(text: _restaurantName);
+
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Modifică numele restaurantului'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'Nume'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Anulează'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  final data = await ApiService.updateBranding(name: controller.text);
+                  setState(() {
+                    _restaurantName = data['restaurant_name'];
+                  });
+                } catch (e) {
+                  debugPrint('Eroare la actualizare nume: $e');
+                }
+              },
+              child: const Text('Salvează'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    void _editRestaurantBackground() async {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+      if (result != null) {
+        final path = result.files.single.path!;
+        try {
+          final data = await ApiService.updateBranding(imagePath: path);
+          setState(() {
+            _backgroundImageUrl = data['header_image_url'] ?? '';
+          });
+        } catch (e) {
+          debugPrint('Eroare la actualizare background: $e');
+        }
+      }
+    }
+
+  }
 
 class _CategoryHeader extends SliverPersistentHeaderDelegate {
   final List<Category> categories;
