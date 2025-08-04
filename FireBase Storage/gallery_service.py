@@ -2,9 +2,47 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, H
 from firebase_admin import auth, storage, firestore
 from typing import List
 from uuid import uuid4
+from urllib.parse import unquote
 
 router = APIRouter()
 
+def delete_storage_file_by_url(public_url: str) -> None:
+    """
+    Șterge blob-ul din Firebase Storage pe baza URL-ului public generat
+    de upload_image (v0/b/<bucket>/o/<path>?alt=media&token=...).
+
+    Funcționează pentru domeniile *.googleapis.com și *.firebasestorage.app.
+    """
+    try:
+        if not public_url:
+            return
+
+        # extrage bucket name (între "/b/" și următorul "/o/")
+        # și calea encodată (după "/o/" până la "?")
+        b_idx = public_url.find("/b/")
+        o_idx = public_url.find("/o/")
+        if b_idx == -1 or o_idx == -1:
+            return  # nu e un URL așa cum îl generăm noi
+
+        # bucket name
+        b_start = b_idx + 3
+        b_end = public_url.find("/", b_start)
+        bucket_name = public_url[b_start:b_end]
+
+        # encoded path
+        o_start = o_idx + 3
+        q_idx = public_url.find("?", o_start)
+        encoded_path = public_url[o_start: q_idx if q_idx != -1 else len(public_url)]
+        path = unquote(encoded_path)  # "users/uid/branding/xxxx.jpg"
+
+        # ștergere
+        bucket = storage.bucket(bucket_name)
+        blob = bucket.blob(path)
+        if blob.exists():
+            blob.delete()
+    except Exception:
+        # nu blocăm fluxul dacă ștergerea eșuează
+        pass
 def get_current_uid(authorization: str = Header(...)) -> str:
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token JWT lipsă sau invalid")
@@ -116,20 +154,44 @@ def update_branding(
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
+    user_ref = db.collection("users").document(uid)
+
+    # Citește URL-ul vechi pentru a-l șterge după update
+    old_doc = user_ref.get()
+    old_url = ""
+    if old_doc.exists:
+        d = old_doc.to_dict() or {}
+        old_url = d.get("headerImageUrl", "")
+
     update_data = {}
 
     if name is not None:
         update_data["restaurant_name"] = name
 
     if file is not None:
+        # încarcă noua imagine
         image_url = upload_image(uid, file.file, file.filename, folder="branding")
-        update_data["headerImageUrl"] = image_url
+        update_data["headerImageUrl"] = image_url  # în Firestore păstrăm camelCase
 
     if not update_data:
         raise HTTPException(status_code=400, detail="Nimic de actualizat")
 
-    db.collection("users").document(uid).set(update_data, merge=True)
-    return {"message": "Branding actualizat", **update_data}
+    # 1) salvează în Firestore
+    user_ref.set(update_data, merge=True)
+
+    # 2) dacă am încărcat o imagine nouă și exista una veche, șterge-o din Storage
+    if file is not None and old_url:
+        delete_storage_file_by_url(old_url)
+
+    # răspuns uniform (snake_case pentru frontend)
+    resp = {"message": "Branding actualizat"}
+    if "restaurant_name" in update_data:
+        resp["restaurant_name"] = update_data["restaurant_name"]
+    if "headerImageUrl" in update_data:
+        resp["header_image_url"] = update_data["headerImageUrl"]
+
+    return resp
+
 
 
 # ------------------ CATEGORII ------------------
