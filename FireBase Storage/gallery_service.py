@@ -1,8 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, Header
 from firebase_admin import auth, storage, firestore
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
 from urllib.parse import unquote
+
 
 router = APIRouter()
 
@@ -56,28 +57,42 @@ def get_current_uid(authorization: str = Header(...)) -> str:
 def get_firestore():
     return firestore.client()
 
-def upload_image(uid: str, file_obj, filename: str, folder: str = "images") -> str:
+def upload_image(
+    uid: str,
+    file_obj,
+    filename: str,
+    folder: str = "images",
+    content_type: str | None = None,
+) -> tuple[str, str]:
     bucket = storage.bucket()
     image_id = f"{uuid4()}_{filename}"
     path = f"users/{uid}/{folder}/{image_id}"
     blob = bucket.blob(path)
 
-    # 🔐 Adaugă token unic și setează metadata explicit
+    # token de acces pentru URL
     token = str(uuid4())
-    blob.metadata = {
-        "firebaseStorageDownloadTokens": token
-    }
+    blob.metadata = {"firebaseStorageDownloadTokens": token}
 
-    blob.upload_from_file(file_obj, content_type="image/jpeg")
-    blob.patch()  # IMPORTANT: salvează metadatele
+    # folosește tipul real, cu fallback pe jpeg
+    ct = content_type or "image/jpeg"
+    blob.upload_from_file(file_obj, content_type=ct)
+    blob.patch()
 
-    # 🔗 Construiește URL Firebase compatibil cu `alt=media` și token
     encoded_path = path.replace("/", "%2F")
-    firebase_url = (
-        f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/{encoded_path}?alt=media&token={token}"
+    url = (
+        f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/"
+        f"{encoded_path}?alt=media&token={token}"
     )
+    return url, path
 
-    return firebase_url
+def delete_blob_if_exists(path: str) -> None:
+    if not path:
+        return
+    try:
+        storage.bucket().blob(path).delete()
+    except Exception:
+        pass
+
 
 
 @router.post("/initialize")
@@ -605,4 +620,61 @@ def get_public_menu(uid: str):
         "categories": result
     }
 
+@router.post("/public-menu/{uid}/reviews")
+def submit_review(
+    uid: str,
+    email: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    message: str = Form(...),
+    file: UploadFile = File(None),
+):
+    # reguli minime
+    if (not email) and (not phone):
+        raise HTTPException(status_code=400, detail="Completează email sau telefon.")
+    if len(message.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Mesaj prea scurt.")
+
+    # (opțional) validează tipul fișierului
+    if file and (file.content_type not in {"image/jpeg", "image/png", "image/webp"}):
+        raise HTTPException(status_code=400, detail="Imaginea trebuie să fie JPG/PNG/WEBP.")
+
+    db = get_firestore()
+    reviews_ref = db.collection("users").document(uid).collection("reviews")
+    doc_ref = reviews_ref.document()
+
+    image_url, image_path = "", ""
+    if file:
+        image_url, image_path = upload_image(uid, file.file, file.filename, folder="reviews", content_type=file.content_type)
+
+    doc_ref.set({
+        "email": email or "",
+        "phone": phone or "",
+        "message": message.strip(),
+        "imageUrl": image_url,
+        "imagePath": image_path,
+        "createdAt": firestore.SERVER_TIMESTAMP,
+    })
+
+    return {"message": "Review trimis. Mulțumim!", "id": doc_ref.id}
+
+@router.get("/reviews", response_model=List[dict])
+def list_reviews(uid: str = Depends(get_current_uid)):
+    db = get_firestore()
+    q = (
+        db.collection("users").document(uid)
+          .collection("reviews")
+          .order_by("createdAt", direction=firestore.Query.DESCENDING)
+    )
+    out = []
+    for d in q.stream():
+        data = d.to_dict() or {}
+        out.append({
+            "id": d.id,
+            "email": data.get("email", ""),
+            "phone": data.get("phone", ""),
+            "message": data.get("message", ""),
+            "image_url": data.get("imageUrl", ""),
+            "createdAt": data.get("createdAt"),
+        })
+    return out
 
