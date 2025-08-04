@@ -33,6 +33,12 @@ class DashboardScreen extends StatelessWidget {
           }
         }
       },
+
+      {
+        'icon': Icons.reviews,
+        'label': 'Recenzii clienți',
+        'route': '/manager_reviews',
+      },
     ];
 
     return Scaffold(

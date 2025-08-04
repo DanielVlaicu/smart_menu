@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'product_list_screen.dart';
+import 'review_form_screen.dart';
 
 class ClientMenuScreen extends StatefulWidget {
   final String uid;
@@ -92,6 +93,19 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
             pinned: true,
             expandedHeight: 200,
             backgroundColor: Colors.black,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.rate_review, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReviewFormScreen(restaurantUid: widget.uid),
+                    ),
+                  );
+                },
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               title: Text(restaurantName, style: const TextStyle(color: Colors.white)),
               background: Image.network(

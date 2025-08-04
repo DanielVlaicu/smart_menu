@@ -9,6 +9,7 @@ import '../../models/product.dart';
 import '../../services/api_services.dart';
 import 'manager_image_fullscreen_view.dart';
 import '../utils/auto_scroll_on_drag_mixin.dart';
+import 'package:smart_menu/utils/button_debouncer.dart';
 
 
 class ManagerProductListScreen extends StatefulWidget {
@@ -30,6 +31,7 @@ class ManagerProductListScreen extends StatefulWidget {
 class _ManagerProductListScreenState extends State<ManagerProductListScreen> with AutoScrollOnDragMixin {
 
   List<Product> products = [];
+  final ValueNotifier<bool> isCreatingNotifier = ValueNotifier(false);
 
   @override
   void initState() {
@@ -70,38 +72,34 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
     final descController = TextEditingController(text: current.description);
     final weightController = TextEditingController(text: current.weight);
     final allergenController = TextEditingController(text: current.allergens);
-    final priceController = TextEditingController(
-        text: current.price.toString());
+    final priceController = TextEditingController(text: current.price.toString());
     bool isVisible = current.visible;
     String imagePath = current.imageUrl;
 
+    final isSavingNotifier = ValueNotifier(false);
+    final isDeletingNotifier = ValueNotifier(false);
+
     await showDialog(
       context: context,
-      builder: (_) =>
-          AlertDialog(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setInnerState) {
+          return AlertDialog(
             title: const Text('Editează produsul'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Titlu')),
-                  TextField(controller: descController,
-                      decoration: const InputDecoration(
-                          labelText: 'Descriere')),
-                  TextField(controller: weightController,
-                      decoration: const InputDecoration(labelText: 'Gramaj')),
-                  TextField(controller: allergenController,
-                      decoration: const InputDecoration(labelText: 'Alergeni')),
-                  TextField(controller: priceController,
-                      decoration: const InputDecoration(labelText: 'Preț')),
+                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Titlu')),
+                  TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descriere')),
+                  TextField(controller: weightController, decoration: const InputDecoration(labelText: 'Gramaj')),
+                  TextField(controller: allergenController, decoration: const InputDecoration(labelText: 'Alergeni')),
+                  TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Preț')),
                   const SizedBox(height: 10),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      final result = await FilePicker.platform.pickFiles(
-                          type: FileType.image);
+                      final result = await FilePicker.platform.pickFiles(type: FileType.image);
                       if (result != null) {
-                        setState(() {
+                        setInnerState(() {
                           imagePath = result.files.single.path!;
                         });
                       }
@@ -114,16 +112,9 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                     children: [
                       const Text('Vizibil în meniu'),
                       const Spacer(),
-                      StatefulBuilder(
-                        builder: (context, setInnerState) =>
-                            Switch(
-                              value: isVisible,
-                              onChanged: (val) {
-                                setInnerState(() {
-                                  isVisible = val;
-                                });
-                              },
-                            ),
+                      Switch(
+                        value: isVisible,
+                        onChanged: (val) => setInnerState(() => isVisible = val),
                       ),
                     ],
                   ),
@@ -131,40 +122,73 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
               ),
             ),
             actions: [
-              TextButton(
-                onPressed: () async {
-                  await ApiService.deleteProduct(categoryId: widget.categoryId,
+              ValueListenableBuilder<bool>(
+                valueListenable: isDeletingNotifier,
+                builder: (_, isDeleting, __) => TextButton(
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                    isDeletingNotifier.value = true;
+
+                    await ApiService.deleteProduct(
+                      categoryId: widget.categoryId,
                       subcategoryId: widget.subcategoryId,
-                      id: current.id);
-                  await _loadProducts();
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                    'Șterge', style: TextStyle(color: Colors.red)),
+                      id: current.id,
+                    );
+
+                    await _loadProducts();
+
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  child: isDeleting
+                      ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : const Text('Șterge', style: TextStyle(color: Colors.red)),
+                ),
               ),
-              TextButton(
-                onPressed: () async {
-                  await ApiService.updateProduct(
-                    categoryId: widget.categoryId,
-                    subcategoryId: widget.subcategoryId,
-                    id: current.id,
-                    name: titleController.text,
-                    description: descController.text,
-                    imagePath: imagePath,
-                    weight: weightController.text,
-                    allergens: allergenController.text,
-                    price: double.tryParse(priceController.text) ?? 0.0,
-                    visible: isVisible,
-                    order: index,
-                    protected: false,
-                  );
-                  await _loadProducts();
-                  Navigator.pop(context);
-                },
-                child: const Text('Salvează'),
+              ValueListenableBuilder<bool>(
+                valueListenable: isSavingNotifier,
+                builder: (_, isSaving, __) => TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                    isSavingNotifier.value = true;
+
+                    await ApiService.updateProduct(
+                      categoryId: widget.categoryId,
+                      subcategoryId: widget.subcategoryId,
+                      id: current.id,
+                      name: titleController.text,
+                      description: descController.text,
+                      imagePath: imagePath,
+                      weight: weightController.text,
+                      allergens: allergenController.text,
+                      price: double.tryParse(priceController.text) ?? 0.0,
+                      visible: isVisible,
+                      order: index,
+                      protected: false,
+                    );
+
+                    await _loadProducts();
+
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  child: isSaving
+                      ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : const Text('Salvează'),
+                ),
               ),
             ],
-          ),
+          );
+        },
+      ),
     );
   }
 
@@ -177,32 +201,30 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
     bool isVisible = true;
     String? imagePath;
 
+    final isCreatingNotifier = ValueNotifier(false); // 👈 persistă
+
     await showDialog(
       context: context,
-      builder: (_) =>
-          AlertDialog(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setInnerState) {
+          return AlertDialog(
             title: const Text('Adaugă produs nou'),
             content: SingleChildScrollView(
               child: Column(
                 children: [
-                  TextField(controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Titlu')),
-                  TextField(controller: descController,
-                      decoration: const InputDecoration(
-                          labelText: 'Descriere')),
-                  TextField(controller: weightController,
-                      decoration: const InputDecoration(labelText: 'Gramaj')),
-                  TextField(controller: allergenController,
-                      decoration: const InputDecoration(labelText: 'Alergeni')),
-                  TextField(controller: priceController,
-                      decoration: const InputDecoration(labelText: 'Preț')),
+                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Titlu')),
+                  TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descriere')),
+                  TextField(controller: weightController, decoration: const InputDecoration(labelText: 'Gramaj')),
+                  TextField(controller: allergenController, decoration: const InputDecoration(labelText: 'Alergeni')),
+                  TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Preț')),
                   const SizedBox(height: 10),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      final result = await FilePicker.platform.pickFiles(
-                          type: FileType.image);
+                      final result = await FilePicker.platform.pickFiles(type: FileType.image);
                       if (result != null) {
-                        imagePath = File(result.files.single.path!).path;
+                        setInnerState(() {
+                          imagePath = File(result.files.single.path!).path;
+                        });
                       }
                     },
                     icon: const Icon(Icons.image),
@@ -213,13 +235,9 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                     children: [
                       const Text('Vizibil în meniu'),
                       const Spacer(),
-                      StatefulBuilder(
-                        builder: (context, setInnerState) =>
-                            Switch(
-                              value: isVisible,
-                              onChanged: (val) =>
-                                  setInnerState(() => isVisible = val),
-                            ),
+                      Switch(
+                        value: isVisible,
+                        onChanged: (val) => setInnerState(() => isVisible = val),
                       ),
                     ],
                   ),
@@ -227,53 +245,66 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
               ),
             ),
             actions: [
-              TextButton(
-                onPressed: () async {
-                  if (imagePath == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Te rog alege o imagine')),
-                    );
-                    return;
-                  }
+              ValueListenableBuilder<bool>(
+                valueListenable: isCreatingNotifier,
+                builder: (_, isCreating, __) => TextButton(
+                  onPressed: isCreating
+                      ? null
+                      : () async {
+                    if (imagePath == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Te rog alege o imagine')),
+                      );
+                      return;
+                    }
 
-                  final file = File(imagePath!);
-                  if (!file.existsSync()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(
-                          'Imaginea nu a fost găsită pe disc:\n$imagePath')),
-                    );
-                    return;
-                  }
+                    final file = File(imagePath!);
+                    if (!file.existsSync()) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Imaginea nu a fost găsită:\n$imagePath')),
+                      );
+                      return;
+                    }
 
-                  try {
-                    print('Imagine selectată: $imagePath');
-                    print('Fișierul există: ${File(imagePath!).existsSync()}');
-                    await ApiService.createProduct(
-                      categoryId: widget.categoryId,
-                      subcategoryId: widget.subcategoryId,
-                      name: titleController.text,
-                      description: descController.text,
-                      imagePath: imagePath!,
-                      weight: weightController.text,
-                      allergens: allergenController.text,
-                      price: double.tryParse(priceController.text) ?? 0.0,
-                      visible: isVisible,
-                      order: products.length - 1,
-                      protected: false, // presupunem default false; setează cum vrei
-                    );
-                    await _loadProducts();
-                    Navigator.pop(context);
-                  } catch (e) {
-                    debugPrint('Eroare la creare produs: $e');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Eroare: ${e.toString()}')),
-                    );
-                  }
-                },
-                child: const Text('Adaugă'),
-              )
+                    isCreatingNotifier.value = true;
+
+                    try {
+                      await ApiService.createProduct(
+                        categoryId: widget.categoryId,
+                        subcategoryId: widget.subcategoryId,
+                        name: titleController.text,
+                        description: descController.text,
+                        imagePath: imagePath!,
+                        weight: weightController.text,
+                        allergens: allergenController.text,
+                        price: double.tryParse(priceController.text) ?? 0.0,
+                        visible: isVisible,
+                        order: products.length - 1,
+                        protected: false,
+                      );
+                      await _loadProducts();
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (e) {
+                      debugPrint('Eroare la creare produs: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Eroare: ${e.toString()}')),
+                      );
+                      isCreatingNotifier.value = false;
+                    }
+                  },
+                  child: isCreating
+                      ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : const Text('Adaugă'),
+                ),
+              ),
             ],
-          ),
+          );
+        },
+      ),
     );
   }
 

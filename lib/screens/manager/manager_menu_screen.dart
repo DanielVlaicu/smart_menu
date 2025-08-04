@@ -27,9 +27,8 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
   bool isReorderingCategories = false;
   String _restaurantName = '';
   String _backgroundImageUrl = '';
-  final ButtonDebouncer _saveDebouncer = ButtonDebouncer();
-  final ButtonDebouncer _addDebouncer = ButtonDebouncer();
-  final ButtonDebouncer _deleteDebouncer = ButtonDebouncer();
+  final ButtonDebouncer _addCategoryDebouncer = ButtonDebouncer();
+  final ButtonDebouncer _addSubcategoryDebouncer = ButtonDebouncer();
 
   @override
   void initState() {
@@ -97,76 +96,96 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
     }
   }
 
-  void _addCategory() async {
-    final TextEditingController titleController = TextEditingController();
-    String? imagePath;
-    bool isVisible = true;
+  void _addCategory() {
+    _addCategoryDebouncer.run(() async {
+      final TextEditingController titleController = TextEditingController();
+      String? imagePath;
+      bool isVisible = true;
 
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setInnerState) => AlertDialog(
-          title: const Text('Adaugă categorie'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Titlu categorie'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () async {
+      await showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setInnerState) {
+            bool isCreating = false;
 
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
-                  if (result != null) {
-                    setInnerState(() {
-                      imagePath = File(result.files.single.path!).path;
-                    });
-                  }
-                },
-                icon: const Icon(Icons.image),
-                label: const Text('Alege imagine'),
-              ),
-              const SizedBox(height: 10),
-              Row(
+            return AlertDialog(
+              title: const Text('Adaugă categorie'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Vizibil în meniu'),
-                  const Spacer(),
-                  Switch(
-                    value: isVisible,
-                    onChanged: (val) => setInnerState(() => isVisible = val),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(labelText: 'Titlu categorie'),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+                      if (result != null) {
+                        setInnerState(() {
+                          imagePath = File(result.files.single.path!).path;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.image),
+                    label: const Text('Alege imagine'),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Text('Vizibil în meniu'),
+                      const Spacer(),
+                      Switch(
+                        value: isVisible,
+                        onChanged: (val) => setInnerState(() => isVisible = val),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                if (titleController.text.isNotEmpty) {
-                  String finalPath = imagePath ?? (await copyAssetToTempFile(
-                    'assets/images/default_category.png',
-                    'default_category.png',
-                  )).path;
+              actions: [
+                StatefulBuilder(
+                  builder: (context, innerSetState) => TextButton(
+                    onPressed: isCreating
+                        ? null
+                        : () async {
+                      if (titleController.text.isEmpty) return;
 
-                  await ApiService.createCategory(
-                    title: titleController.text,
-                    imagePath: finalPath,
-                    visible: isVisible,
-                      order: categories.length,
-                  );
-                  await _loadCategories();
-                }
-                Navigator.of(context).pop();
-              },
-              child: const Text('Adaugă'),
-            ),
-          ],
+                      innerSetState(() => isCreating = true);
+
+                      final finalPath = imagePath ?? (await copyAssetToTempFile(
+                        'assets/images/default_category.png',
+                        'default_category.png',
+                      )).path;
+
+                      await ApiService.createCategory(
+                        title: titleController.text,
+                        imagePath: finalPath,
+                        visible: isVisible,
+                        order: categories.length,
+                      );
+
+                      await _loadCategories();
+
+                      if (context.mounted) Navigator.of(context).pop();
+                    },
+                    child: isCreating
+                        ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                        : const Text('Adaugă'),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
-      ),
-    );
+      );
+    });
   }
+
 
   void _reorderCategories(int oldIndex, int newIndex) async {
     setState(() {
@@ -333,75 +352,96 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
 
 
 
-  void _addSubcategory(Category category) async {
-    final TextEditingController titleController = TextEditingController();
-    String? imagePath;
-    bool isVisible = true;
+  void _addSubcategory(Category category) {
+    _addSubcategoryDebouncer.run(() async {
+      final TextEditingController titleController = TextEditingController();
+      String? imagePath;
+      bool isVisible = true;
 
-    await showDialog(
-      context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setInnerState) => AlertDialog(
-          title: const Text('Adaugă subcategorie'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Titlu'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
-                  if (result != null) {
-                    setInnerState(() {
-                      imagePath = File(result.files.single.path!).path;
-                    });
-                  }
-                },
-                icon: const Icon(Icons.image),
-                label: const Text('Alege imagine'),
-              ),
-              const SizedBox(height: 10),
-              Row(
+      await showDialog(
+        context: context,
+        builder: (_) => StatefulBuilder(
+          builder: (context, setInnerState) {
+            bool isCreating = false;
+
+            return AlertDialog(
+              title: const Text('Adaugă subcategorie'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Vizibil în meniu'),
-                  const Spacer(),
-                  Switch(
-                    value: isVisible,
-                    onChanged: (val) => setInnerState(() => isVisible = val),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(labelText: 'Titlu'),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+                      if (result != null) {
+                        setInnerState(() {
+                          imagePath = File(result.files.single.path!).path;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.image),
+                    label: const Text('Alege imagine'),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Text('Vizibil în meniu'),
+                      const Spacer(),
+                      Switch(
+                        value: isVisible,
+                        onChanged: (val) => setInnerState(() => isVisible = val),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                if (titleController.text.isNotEmpty) {
-                  String finalPath = imagePath ?? (await copyAssetToTempFile(
-                    'assets/images/default_subcategory.png',
-                    'default_subcategory.png',
-                  )).path;
+              actions: [
+                StatefulBuilder(
+                  builder: (context, innerSetState) => TextButton(
+                    onPressed: isCreating
+                        ? null
+                        : () async {
+                      if (titleController.text.isEmpty) return;
 
-                  await ApiService.createSubcategory(
-                    title: titleController.text,
-                    imagePath: finalPath,
-                    visible: isVisible,
-                    categoryId: category.id,
-                    order: currentSubcategories.length,
-                  );
-                  await _loadSubcategories(category.id);
-                }
-                Navigator.of(context).pop();
-              },
-              child: const Text('Adaugă'),
-            ),
-          ],
+                      innerSetState(() => isCreating = true);
+
+                      String finalPath = imagePath ??
+                          (await copyAssetToTempFile(
+                            'assets/images/default_subcategory.png',
+                            'default_subcategory.png',
+                          )).path;
+
+                      await ApiService.createSubcategory(
+                        title: titleController.text,
+                        imagePath: finalPath,
+                        visible: isVisible,
+                        categoryId: category.id,
+                        order: currentSubcategories.length,
+                      );
+
+                      await _loadSubcategories(category.id);
+
+                      if (context.mounted) Navigator.of(context).pop();
+                    },
+                    child: isCreating
+                        ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                        : const Text('Adaugă'),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
-      ),
-    );
+      );
+    });
   }
 
 

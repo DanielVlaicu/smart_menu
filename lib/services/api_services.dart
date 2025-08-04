@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   static const String baseUrl = 'https://firebase-storage-141030912906.europe-west1.run.app';
@@ -461,6 +462,57 @@ class ApiService {
       throw Exception('Eroare la actualizarea brandingului: $body');
     }
     return jsonDecode(body) as Map<String, dynamic>;
+  }
+
+
+
+  static Future<void> submitPublicReview({
+    required String restaurantUid,
+    String? email,
+    String? phone,
+    required String message,
+    String? imagePath,
+    File? imageFile,
+  }) async {
+    final req = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/public-menu/$restaurantUid/reviews'),
+    );
+
+    if (email != null && email.isNotEmpty) req.fields['email'] = email;
+    if (phone != null && phone.isNotEmpty) req.fields['phone'] = phone;
+    req.fields['message'] = message;
+
+    if (imageFile != null) {
+      req.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          imageFile.path,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+    }
+
+    final resp = await req.send();
+    final body = await resp.stream.bytesToString();
+
+    if (resp.statusCode != 200) {
+      throw Exception('Eroare la trimiterea review-ului: $body');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getReviews() async {
+    final headers = await _authHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/reviews'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Eroare la încărcarea recenziilor');
+    }
   }
 
 }

@@ -5,6 +5,7 @@ import 'package:smart_menu/screens/client/menu_screen2.dart';
 import 'package:smart_menu/screens/manager/account_settings_screen.dart';
 import 'package:smart_menu/screens/manager/manager_menu_screen.dart';
 import 'package:smart_menu/screens/manager/menu_settings_screen.dart';
+import 'package:smart_menu/screens/manager/manager_review_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/manager/dashboard_screen.dart';
@@ -104,6 +105,8 @@ class RestaurantMenuApp extends StatelessWidget {
           case '/menu':
             final uid = settings.arguments as String;
             return MaterialPageRoute(builder: (_) => ClientMenuScreen(uid: uid));
+          case '/manager_reviews':
+            return MaterialPageRoute(builder: (_) => const ManagerReviewScreen());
           default:
             return MaterialPageRoute(
               builder: (_) => const Scaffold(
