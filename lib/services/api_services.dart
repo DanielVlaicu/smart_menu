@@ -319,6 +319,8 @@ class ApiService {
       ..fields['allergens'] = allergens
       ..fields['price'] = price.toString()
       ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString()
+      ..fields['protected'] = protected.toString()
       ..files.add(await http.MultipartFile.fromPath('file', imagePath));
 
     final response = await request.send();
@@ -356,8 +358,9 @@ class ApiService {
       ..fields['weight'] = weight
       ..fields['allergens'] = allergens
       ..fields['price'] = price.toString()
-      ..fields['visible'] = visible.toString();
-
+      ..fields['visible'] = visible.toString()
+      ..fields['order'] = order.toString()
+      ..fields['protected'] = protected.toString();
     if (imagePath.startsWith('/')) {
       request.files.add(await http.MultipartFile.fromPath('file', imagePath));
     }
