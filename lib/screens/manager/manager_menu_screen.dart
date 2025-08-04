@@ -48,18 +48,27 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
   Future<void> _loadCategories() async {
     try {
       final result = await ApiService.getCategories();
-      print('Categorie response: $result'); // vezi structura JSON
+      debugPrint('Categorie response: $result');
+
       setState(() {
         categories = result.map((e) => Category.fromJson(e)).toList();
+        // 🛠 Resetăm indexul să fie sigur valid
+        selectedCategoryIndex = 0;
       });
+
       if (categories.isNotEmpty) {
-        _loadSubcategories(categories[selectedCategoryIndex].id);
+        await _loadSubcategories(categories[0].id);
+      } else {
+        setState(() {
+          currentSubcategories = [];
+        });
       }
     } catch (e, stack) {
       debugPrint('Eroare la categorii: $e');
       debugPrintStack(stackTrace: stack);
     }
   }
+
 
   Future<void> _loadSubcategories(String categoryId) async {
     try {
@@ -142,6 +151,24 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
       ),
     );
   }
+
+  void _reorderCategories(int oldIndex, int newIndex) async {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = categories.removeAt(oldIndex);
+      categories.insert(newIndex, item);
+    });
+
+    for (int i = 0; i < categories.length; i++) {
+      await ApiService.updateCategoryOrder(
+        id: categories[i].id,
+        title: categories[i].title,
+        visible: categories[i].visible,
+        order: i,
+      );
+    }
+  }
+
 
   Future<void> _saveCategoryOrder() async {
     for (int i = 0; i < categories.length; i++) {
@@ -440,6 +467,26 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> {
         ],
       ),
     );
+  }
+
+  void _reorderSubcategories(int oldIndex, int newIndex) async {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final item = currentSubcategories.removeAt(oldIndex);
+      currentSubcategories.insert(newIndex, item);
+    });
+
+    final categoryId = categories[selectedCategoryIndex].id;
+
+    for (int i = 0; i < currentSubcategories.length; i++) {
+      await ApiService.updateSubcategoryOrder(
+        categoryId: categoryId,
+        id: currentSubcategories[i].id,
+        title: currentSubcategories[i].title,
+        visible: currentSubcategories[i].visible,
+        order: i,
+      );
+    }
   }
 
   @override
