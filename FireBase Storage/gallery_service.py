@@ -114,7 +114,8 @@ def create_category(
         "imageUrl": image_url,
         "visible": visible,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "order": next_order
+        "order": next_order,
+        "protected": False  # 🆕
     })
 
     return {"message": "Categorie creată", "id": cat_doc.id, "image_url": image_url}
@@ -194,7 +195,8 @@ def create_subcategory(
         "imageUrl": image_url,
         "visible": visible,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "order": next_order
+        "order": next_order,
+        "protected": False  # 🆕
     })
 
     # Creează produs implicit
@@ -322,7 +324,8 @@ def create_product(
         "visible": visible,
         "imageUrl": image_url,
         "createdAt": firestore.SERVER_TIMESTAMP,
-        "order": next_order
+        "order": next_order,
+        "protected": False  # 🆕
     })
 
     return {"message": "Produs creat", "id": prod_doc.id, "image_url": image_url}
