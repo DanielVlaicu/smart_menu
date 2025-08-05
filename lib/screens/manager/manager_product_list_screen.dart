@@ -500,8 +500,10 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(widget.subcategoryTitle),
+        title: Text(widget.subcategoryTitle, style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [

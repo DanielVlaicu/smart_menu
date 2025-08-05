@@ -94,7 +94,7 @@ class RestaurantMenuApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const AccountSettingsScreen());
           case '/menu_settings':
             return MaterialPageRoute(builder: (_) => const MenuSettingsScreen());
-          case '/menu2':
+          case '/qr':
             final uid = settings.arguments as String;
             return MaterialPageRoute(builder: (_) => QRGeneratorScreen(uid: uid));
           case '/menu':

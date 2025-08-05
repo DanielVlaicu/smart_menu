@@ -575,9 +575,13 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
           ),
         ),
       ),
-     CustomScrollView(
-        slivers: [
-          SliverAppBar(
+
+          Listener(
+              onPointerMove: autoScrollDuringDrag,
+              child: CustomScrollView(
+             controller: scrollController,
+              slivers: [
+            SliverAppBar(
 
             pinned: true,
             expandedHeight: 200,
@@ -631,9 +635,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
             child: Listener(
               onPointerMove: autoScrollDuringDrag,
               child: ReorderableListView.builder(
-                scrollController: scrollController, // folosește controllerul din mixin
+
                 shrinkWrap: true,
-                physics: const ClampingScrollPhysics(), //  permite scroll controlabil
+                physics: const NeverScrollableScrollPhysics(),
                 key: PageStorageKey("subcategoryList"),
                 itemCount: items.length + 1,
                 onReorder: (oldIndex, newIndex) async {
@@ -797,6 +801,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
           ,
         ],
       ),
+          ),
           if (isReorderingCategories)
             Positioned.fill(
               child: GestureDetector(

@@ -93,6 +93,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
             pinned: true,
             expandedHeight: 200,
             backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
             actions: [
               IconButton(
                 icon: const Icon(Icons.rate_review, color: Colors.white),
