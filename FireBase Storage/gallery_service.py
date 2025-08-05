@@ -185,7 +185,7 @@ def update_branding(
 
     if file is not None:
         # încarcă noua imagine
-        image_url = upload_image(uid, file.file, file.filename, folder="branding")
+        image_url, _ = upload_image(uid, file.file, file.filename, folder="branding")
         update_data["headerImageUrl"] = image_url  # în Firestore păstrăm camelCase
 
     if not update_data:
@@ -219,7 +219,7 @@ def create_category(
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-    image_url = upload_image(uid, file.file, file.filename, folder="categories")
+    image_url, _ = upload_image(uid, file.file, file.filename, folder="categories")
 
     # 🔢 Calculează poziția următoare
     cats_ref = db.collection("users").document(uid).collection("categories")
@@ -247,7 +247,7 @@ def get_categories(uid: str = Depends(get_current_uid)):
     return [{
         "id": doc.id,
         "title": doc.to_dict().get("name"),
-        "image_url": doc.to_dict().get("imageUrl"),
+        "image_url": doc.to_dict().get("imageUrl") or "",  # asigură că e un string, nu listă
         "visible": doc.to_dict().get("visible", True),
         "protected": doc.to_dict().get("protected", False)
     } for doc in cats]
@@ -271,7 +271,7 @@ def update_category(
         update_data["order"] = order
 
     if file:
-        image_url = upload_image(uid, file.file, file.filename, folder="categories")
+        image_url, _ = upload_image(uid, file.file, file.filename, folder="categories")
         update_data["imageUrl"] = image_url
 
     db.collection("users").document(uid).collection("categories").document(category_id).update(update_data)
@@ -280,11 +280,17 @@ def update_category(
 @router.delete("/categories/{category_id}")
 def delete_category(category_id: str, uid: str = Depends(get_current_uid)):
     db = get_firestore()
-    doc = db.collection("users").document(uid).collection("categories").document(category_id).get()
-    if doc.exists and doc.to_dict().get("protected"):
-        raise HTTPException(status_code=403, detail="Această categorie nu poate fi ștearsă")
-    db.collection("users").document(uid).collection("categories").document(category_id).delete()
-    return {"message": "Categorie ștearsă"}
+    cat_ref = db.collection("users").document(uid).collection("categories").document(category_id)
+    doc = cat_ref.get()
+    if doc.exists:
+        if doc.to_dict().get("protected"):
+            raise HTTPException(status_code=403, detail="Această categorie nu poate fi ștearsă")
+        image_url = doc.to_dict().get("imageUrl", "")
+        delete_storage_file_by_url(image_url)
+        cat_ref.delete()
+        return {"message": "Categorie ștearsă"}
+    raise HTTPException(status_code=404, detail="Categoria nu există")
+
 
 # ------------------ SUBCATEGORII ------------------
 
@@ -297,7 +303,7 @@ def create_subcategory(
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-    image_url = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
+    image_url, _ = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
 
     # 🔢 Calculează ordinea subcategoriilor existente
     subcats_ref = (
@@ -374,7 +380,7 @@ def update_subcategory(
         update_data["order"] = order
 
     if file:
-        image_url = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
+        image_url, _ = upload_image(uid, file.file, file.filename, folder=f"categories/{category_id}/subcategories")
         update_data["imageUrl"] = image_url
 
     subcat_ref = (
@@ -404,7 +410,7 @@ def delete_subcategory(category_id: str, subcategory_id: str, uid: str = Depends
     if doc.exists and doc.to_dict().get("protected"):
         raise HTTPException(status_code=403, detail="Această subcategorie nu poate fi ștearsă")
 
-    # 🔁 Șterge toate produsele din subcategorie, în batch-uri
+    # 🔁 Șterge toate produsele din subcategorie, inclusiv imaginile
     products_ref = subcat_ref.collection("products")
     while True:
         to_delete = list(products_ref.limit(200).stream())
@@ -412,13 +418,20 @@ def delete_subcategory(category_id: str, subcategory_id: str, uid: str = Depends
             break
         batch = db.batch()
         for p in to_delete:
+            product_data = p.to_dict() or {}
+            delete_storage_file_by_url(product_data.get("imageUrl", ""))
             batch.delete(p.reference)
         batch.commit()
 
-    # 🗑️ După ce nu mai are subcolecții, șterge documentul subcategoriei
+    # 🗑️ Șterge imaginea subcategoriei (dacă există)
+    subcat_data = doc.to_dict() or {}
+    delete_storage_file_by_url(subcat_data.get("imageUrl", ""))
+
+    # 🔚 Șterge subcategoria
     subcat_ref.delete()
 
     return {"message": "Subcategorie ștearsă"}
+
 
 
 # ------------------ PRODUSE ------------------
@@ -437,7 +450,7 @@ def create_product(
     uid: str = Depends(get_current_uid)
 ):
     db = get_firestore()
-    image_url = upload_image(uid, file.file, file.filename,
+    image_url, _ = upload_image(uid, file.file, file.filename,
                              folder=f"categories/{category_id}/subcategories/{subcategory_id}/products")
 
     # 🔢 Calculează ordinea
@@ -519,7 +532,7 @@ def update_product(
         update_data["order"] = order
 
     if file:
-        image_url = upload_image(uid, file.file, file.filename,
+        image_url, _ = upload_image(uid, file.file, file.filename,
                                  folder=f"categories/{category_id}/subcategories/{subcategory_id}/products")
         update_data["imageUrl"] = image_url
 
@@ -537,14 +550,20 @@ def update_product(
 @router.delete("/categories/{category_id}/subcategories/{subcategory_id}/products/{product_id}")
 def delete_product(category_id: str, subcategory_id: str, product_id: str, uid: str = Depends(get_current_uid)):
     db = get_firestore()
-    (
+    prod_ref = (
         db.collection("users").document(uid)
-          .collection("categories").document(category_id)
-          .collection("subcategories").document(subcategory_id)
-          .collection("products").document(product_id)
-          .delete()
+        .collection("categories").document(category_id)
+        .collection("subcategories").document(subcategory_id)
+        .collection("products").document(product_id)
     )
-    return {"message": "Produs șters"}
+    doc = prod_ref.get()
+    if doc.exists:
+        image_url = doc.to_dict().get("imageUrl", "")
+        delete_storage_file_by_url(image_url)
+        prod_ref.delete()
+        return {"message": "Produs șters"}
+    raise HTTPException(status_code=404, detail="Produsul nu există")
+
 
 @router.get("/public-menu/{uid}")
 def get_public_menu(uid: str):
