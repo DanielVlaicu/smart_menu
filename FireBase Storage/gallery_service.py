@@ -280,16 +280,39 @@ def update_category(
 @router.delete("/categories/{category_id}")
 def delete_category(category_id: str, uid: str = Depends(get_current_uid)):
     db = get_firestore()
-    cat_ref = db.collection("users").document(uid).collection("categories").document(category_id)
-    doc = cat_ref.get()
-    if doc.exists:
-        if doc.to_dict().get("protected"):
-            raise HTTPException(status_code=403, detail="Această categorie nu poate fi ștearsă")
-        image_url = doc.to_dict().get("imageUrl", "")
-        delete_storage_file_by_url(image_url)
-        cat_ref.delete()
-        return {"message": "Categorie ștearsă"}
-    raise HTTPException(status_code=404, detail="Categoria nu există")
+
+    category_ref = db.collection("users").document(uid).collection("categories").document(category_id)
+    category_doc = category_ref.get()
+    if category_doc.exists and category_doc.to_dict().get("protected"):
+        raise HTTPException(status_code=403, detail="Această categorie nu poate fi ștearsă")
+
+    # 🔁 Șterge toate subcategoriile și produsele + imaginile acestora
+    subcats_ref = category_ref.collection("subcategories")
+    for subcat in subcats_ref.stream():
+        subcat_data = subcat.to_dict() or {}
+        subcat_id = subcat.id
+
+        # 🧼 Șterge imagine subcategorie
+        delete_storage_file_by_url(subcat_data.get("imageUrl", ""))
+
+        # 🔁 Șterge produsele și imaginile lor
+        products_ref = subcats_ref.document(subcat_id).collection("products")
+        for prod in products_ref.stream():
+            prod_data = prod.to_dict() or {}
+            delete_storage_file_by_url(prod_data.get("imageUrl", ""))
+            prod.reference.delete()
+
+        # 🗑️ Șterge subcategoria după ce am curățat
+        subcat.reference.delete()
+
+    # 🧼 Șterge imaginea categoriei
+    category_data = category_doc.to_dict() or {}
+    delete_storage_file_by_url(category_data.get("imageUrl", ""))
+
+    # 🗑️ Șterge categoria
+    category_ref.delete()
+
+    return {"message": "Categorie ștearsă complet cu tot conținutul"}
 
 
 # ------------------ SUBCATEGORII ------------------
