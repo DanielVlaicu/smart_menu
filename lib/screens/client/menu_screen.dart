@@ -122,56 +122,12 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: categories.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    var category = entry.value;
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => selectedCategoryIndex = index);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: index == selectedCategoryIndex ? Colors.blue : Colors.grey[900],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child:
-                                Image.network(
-                                  (category['image_url']?.isNotEmpty ?? false)
-                                      ? category['image_url']
-                                      : 'https://via.placeholder.com/150?text=Fără+imagine',
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                category['name'],
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _ClientCategoryHeaderDelegate(
+              categories: categories,
+              selectedIndex: selectedCategoryIndex,
+              onCategorySelected: (index) => setState(() => selectedCategoryIndex = index),
             ),
           ),
           SliverList(
@@ -242,5 +198,78 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
       ),
         ),
     );
+  }
+}
+class _ClientCategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final List<Map<String, dynamic>> categories;
+  final int selectedIndex;
+  final void Function(int) onCategorySelected;
+
+  _ClientCategoryHeaderDelegate({
+    required this.categories,
+    required this.selectedIndex,
+    required this.onCategorySelected,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: GestureDetector(
+              onTap: () => onCategorySelected(index),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: index == selectedIndex ? Colors.blue : Colors.grey[900],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Image.network(
+                        (category['image_url']?.isNotEmpty ?? false)
+                            ? category['image_url']
+                            : 'https://via.placeholder.com/150?text=Fără+imagine',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      category['name'],
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => 80;
+
+  @override
+  double get minExtent => 80;
+
+  @override
+  bool shouldRebuild(covariant _ClientCategoryHeaderDelegate oldDelegate) {
+    return oldDelegate.categories != categories ||
+        oldDelegate.selectedIndex != selectedIndex;
   }
 }

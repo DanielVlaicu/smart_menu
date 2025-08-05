@@ -10,7 +10,7 @@ import '../../models/subcategory.dart';
 import '../../services/api_services.dart';
 import '../manager/manager_product_list_screen.dart';
 import '../utils/auto_scroll_on_drag_mixin.dart';
-import 'package:flutter/gestures.dart';
+
 
 class ManagerMenuScreen extends StatefulWidget {
   const ManagerMenuScreen({super.key});
@@ -169,6 +169,17 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                       );
 
                       await _loadCategories();
+
+                      if (mounted && categories.length == 3) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Ai atins limita de 3 categorii.'),
+                            backgroundColor: Colors.orange,
+                            behavior: SnackBarBehavior.floating,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
 
                       if (context.mounted) Navigator.of(context).pop();
                     },
@@ -512,11 +523,28 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: currentCategory == null ?
-      const Center(child: CircularProgressIndicator()) :
-      CustomScrollView(
+      body: currentCategory == null
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+        children: [
+        GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          if (isReorderingCategories) {
+            setState(() => isReorderingCategories = false);
+          }
+        },
+        child: IgnorePointer(
+          ignoring: !isReorderingCategories,
+          child: Container(
+            color: Colors.transparent,
+          ),
+        ),
+      ),
+     CustomScrollView(
         slivers: [
           SliverAppBar(
+
             pinned: true,
             expandedHeight: 200,
             backgroundColor: Colors.black,
@@ -540,18 +568,28 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
               ),
             ),
           ),
+          if (isReorderingCategories)
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                color: Colors.blue.withOpacity(0.2),
+                alignment: Alignment.center,
+                child: const Text(
+                  'Mod Reordonare activ – Atinge oriunde pentru a ieși',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
           SliverPersistentHeader(
             pinned: true,
-            delegate: _CategoryHeader(
-              categories: categories,
-              selectedCategoryIndex: selectedCategoryIndex,
-              onSelectCategory: (index) {
-                setState(() => selectedCategoryIndex = index);
-                _loadSubcategories(categories[index].id);
-              },
-              onAddCategory: _addCategory,
-              onEditCategory: _editCategory,
-              onToggleReorderMode: _toggleReorderMode,
+            delegate: _CategoryHeaderDelegate(
+              isReordering: isReorderingCategories,
+              reorderWidget: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => setState(() => isReorderingCategories = false),
+                child: _buildReorderableCategoryRow(),
+              ),
+              normalWidget: _buildNormalCategoryRow(),
             ),
           ),
           SliverToBoxAdapter(
@@ -716,8 +754,204 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
           ,
         ],
       ),
+          if (isReorderingCategories)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTapUp: (details) {
+                  // Delay scurt pentru a lăsa drag-ul să înceapă dacă a fost intenționat
+                  Future.delayed(const Duration(milliseconds: 50), () {
+                    if (!mounted) return;
+
+                    // Verifică dacă degetul s-a mișcat între timp (deci era drag, nu tap)
+                    // Dacă nu ai o logică de gesturi complexe, poți elimina verificarea
+                    setState(() => isReorderingCategories = false);
+                  });
+                },
+                child: const SizedBox.expand(),
+              ),
+            ),
+      ]
+          ),
     );
   }
+
+
+  Widget _buildNormalCategoryRow() {
+    return Container(
+      height: 80,
+      color: Colors.black,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: categories.length < 3 ? categories.length + 1 : categories.length,
+        itemBuilder: (context, index) {
+          if (index == categories.length && categories.length < 3)  {
+            return GestureDetector(
+              onTap: () {
+                if (categories.length >= 3) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Poți avea maximum 3 categorii.'),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  _addCategory();
+                }
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            );
+          }
+
+
+          final category = categories[index];
+
+          return GestureDetector(
+            onTap: () {
+              setState(() => selectedCategoryIndex = index);
+              _loadSubcategories(category.id);
+            },
+            onLongPress: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Alege acțiunea'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.edit),
+                        title: const Text('Editează'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _editCategory(index);
+                        },
+                      ),
+                      if (categories.length > 1)
+                        ListTile(
+                        leading: const Icon(Icons.swap_vert),
+                        title: const Text('Reordonează'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _toggleReorderMode();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: index == selectedCategoryIndex ? Colors.blue : Colors.grey[900],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(
+                      category.imageUrl,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      category.title,
+                      style: const TextStyle(color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (!category.visible)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4),
+                      child: Icon(Icons.visibility_off, size: 16, color: Colors.red),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+
+  Widget _buildReorderableCategoryRow() {
+    return Container(
+      height: 80,
+      color: Colors.black,
+      child: ReorderableListView(
+        scrollDirection: Axis.horizontal,
+        onReorder: (oldIndex, newIndex) async {
+          setState(() {
+            final item = categories.removeAt(oldIndex);
+            categories.insert(newIndex > oldIndex ? newIndex - 1 : newIndex, item);
+          });
+
+          await _saveCategoryOrder();
+
+          setState(() {
+            isReorderingCategories = false;
+          });
+        },
+        children: [
+          for (int index = 0; index < categories.length; index++)
+            Container(
+              key: ValueKey(categories[index].id),
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(
+                      categories[index].imageUrl,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      categories[index].title,
+                      style: const TextStyle(color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
 
   void _editRestaurantName() async {
     final controller = TextEditingController(text: _restaurantName);
@@ -773,128 +1007,37 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
 
 }
 
-class _CategoryHeader extends SliverPersistentHeaderDelegate {
-  final List<Category> categories;
-  final int selectedCategoryIndex;
-  final Function(int) onSelectCategory;
-  final VoidCallback onAddCategory;
-  final Function(int) onEditCategory;
-  final VoidCallback onToggleReorderMode;
+class _CategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final bool isReordering;
+  final Widget reorderWidget;
+  final Widget normalWidget;
 
-  _CategoryHeader({
-    required this.categories,
-    required this.selectedCategoryIndex,
-    required this.onSelectCategory,
-    required this.onAddCategory,
-    required this.onEditCategory,
-    required this.onToggleReorderMode,
+  _CategoryHeaderDelegate({
+    required this.isReordering,
+    required this.reorderWidget,
+    required this.normalWidget,
   });
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Colors.black,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            ...categories.asMap().entries.map((entry) {
-              int index = entry.key;
-              var category = entry.value;
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: GestureDetector(
-                  onTap: () => onSelectCategory(index),
-                  onLongPress: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Alege acțiunea'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ListTile(
-                              leading: const Icon(Icons.edit),
-                              title: const Text('Editează'),
-                              onTap: () {
-                                Navigator.pop(context);
-                                onEditCategory(index);
-                              },
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.swap_vert),
-                              title: const Text('Reordonează'),
-                              onTap: () {
-                                Navigator.pop(context);
-                                onToggleReorderMode();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: index == selectedCategoryIndex ? Colors.blue : Colors.grey[900],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.network(
-                            category.imageUrl,
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.image, color: Colors.white),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          category.title,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        const SizedBox(width: 4),
-                        if (!category.visible)
-                          const Icon(Icons.visibility_off, size: 16, color: Colors.red),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
-            if (categories.length < 3)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: GestureDetector(
-                  onTap: onAddCategory,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(Icons.add, color: Colors.white),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: isReordering ? reorderWidget : normalWidget,
     );
   }
 
 
   @override
   double get maxExtent => 80;
+
   @override
   double get minExtent => 80;
+
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => true;
+  bool shouldRebuild(covariant _CategoryHeaderDelegate oldDelegate) {
+    return isReordering != oldDelegate.isReordering ||
+        reorderWidget != oldDelegate.reorderWidget ||
+        normalWidget != oldDelegate.normalWidget;
+  }
 }
+
