@@ -84,36 +84,129 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
       builder: (_) => StatefulBuilder(
         builder: (context, setInnerState) {
           return AlertDialog(
-            title: const Text('Editează produsul'),
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Editează produsul', style: TextStyle(color: Colors.white)),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Titlu')),
-                  TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descriere')),
-                  TextField(controller: weightController, decoration: const InputDecoration(labelText: 'Gramaj')),
-                  TextField(controller: allergenController, decoration: const InputDecoration(labelText: 'Alergeni')),
-                  TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Preț')),
-                  const SizedBox(height: 10),
+                  TextField(
+                    controller: titleController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Titlu',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Descriere',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: weightController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Gramaj',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: allergenController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Alergeni',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: priceController,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Preț',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                     onPressed: () async {
                       final result = await FilePicker.platform.pickFiles(type: FileType.image);
                       if (result != null) {
                         setInnerState(() {
-                          imagePath = result.files.single.path!;
+                          imagePath = File(result.files.single.path!).path;
                         });
                       }
                     },
                     icon: const Icon(Icons.image),
                     label: const Text('Alege imagine'),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Vizibil în meniu'),
+                      const Text('Vizibil în meniu', style: TextStyle(color: Colors.white)),
                       const Spacer(),
                       Switch(
                         value: isVisible,
+                        activeColor: Colors.blue,
                         onChanged: (val) => setInnerState(() => isVisible = val),
                       ),
                     ],
@@ -144,7 +237,7 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                       ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                       : const Text('Șterge', style: TextStyle(color: Colors.red)),
                 ),
@@ -180,9 +273,9 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                       ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                      : const Text('Salvează'),
+                      : const Text('Salvează', style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -208,17 +301,110 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
       builder: (_) => StatefulBuilder(
         builder: (context, setInnerState) {
           return AlertDialog(
-            title: const Text('Adaugă produs nou'),
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Adaugă produs nou', style: TextStyle(color: Colors.white)),
             content: SingleChildScrollView(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Titlu')),
-                  TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descriere')),
-                  TextField(controller: weightController, decoration: const InputDecoration(labelText: 'Gramaj')),
-                  TextField(controller: allergenController, decoration: const InputDecoration(labelText: 'Alergeni')),
-                  TextField(controller: priceController, decoration: const InputDecoration(labelText: 'Preț')),
-                  const SizedBox(height: 10),
+                  TextField(
+                    controller: titleController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Titlu',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Descriere',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: weightController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Gramaj',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: allergenController,
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Alergeni',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: priceController,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Preț',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                     onPressed: () async {
                       final result = await FilePicker.platform.pickFiles(type: FileType.image);
                       if (result != null) {
@@ -230,13 +416,14 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                     icon: const Icon(Icons.image),
                     label: const Text('Alege imagine'),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Vizibil în meniu'),
+                      const Text('Vizibil în meniu', style: TextStyle(color: Colors.white)),
                       const Spacer(),
                       Switch(
                         value: isVisible,
+                        activeColor: Colors.blue,
                         onChanged: (val) => setInnerState(() => isVisible = val),
                       ),
                     ],
@@ -296,9 +483,9 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                       ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
-                      : const Text('Adaugă'),
+                      : const Text('Adaugă', style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -366,38 +553,38 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                   return Dismissible(
                     key: ValueKey(product.id),
                     background: Container(
-                      color: Colors.green,
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: const Icon(Icons.edit, color: Colors.white),
-                    ),
-                    secondaryBackground: Container(
                       color: Colors.red,
-                      alignment: Alignment.centerRight,
+                      alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
+                    secondaryBackground: Container(
+                      color: Colors.blue,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const Icon(Icons.edit, color: Colors.white),
+                    ),
                     confirmDismiss: (direction) async {
                       if (direction == DismissDirection.startToEnd) {
-                        _editProduct(index);
-                        return false;
-                      } else if (direction == DismissDirection.endToStart) {
+                        // Swipe dreapta → ȘTERGERE
                         final confirm = await showDialog(
                           context: context,
-                          builder: (_) =>
-                              AlertDialog(
-                                title: const Text('Confirmă ștergerea'),
-                                content: const Text(
-                                    'Ești sigur că vrei să ștergi acest produs?'),
-                                actions: [
-                                  TextButton(onPressed: () =>
-                                      Navigator.pop(context, false),
-                                      child: const Text('Nu')),
-                                  TextButton(onPressed: () =>
-                                      Navigator.pop(context, true),
-                                      child: const Text('Da')),
-                                ],
+                          builder: (_) => AlertDialog(
+                            backgroundColor: Colors.grey[900],
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text('Confirmă ștergerea', style: TextStyle(color: Colors.white)),
+                            content: const Text('Ești sigur că vrei să ștergi acest produs?', style: TextStyle(color: Colors.white70)),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Anulează', style: TextStyle(color: Colors.white)),
                               ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Șterge', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
                         );
                         if (confirm == true) {
                           await ApiService.deleteProduct(
@@ -409,8 +596,11 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
                           return true;
                         }
                         return false;
+                      } else if (direction == DismissDirection.endToStart) {
+                        // Swipe stânga → EDITARE
+                        _editProduct(index);
+                        return false;
                       }
-                      return false;
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(12),

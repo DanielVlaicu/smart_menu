@@ -112,16 +112,36 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
             bool isCreating = false;
 
             return AlertDialog(
-              title: const Text('Adaugă categorie'),
+              backgroundColor: Colors.grey[900],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Adaugă categorie', style: TextStyle(color: Colors.white)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Titlu categorie'),
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Titlu categorie',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                     onPressed: () async {
                       FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                       if (result != null) {
@@ -133,13 +153,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                     icon: const Icon(Icons.image),
                     label: const Text('Alege imagine'),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Vizibil în meniu'),
+                      const Text('Vizibil în meniu', style: TextStyle(color: Colors.white)),
                       const Spacer(),
                       Switch(
                         value: isVisible,
+                        activeColor: Colors.blue,
                         onChanged: (val) => setInnerState(() => isVisible = val),
                       ),
                     ],
@@ -147,6 +168,10 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                 ],
               ),
               actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Anulează', style: TextStyle(color: Colors.white)),
+                ),
                 StatefulBuilder(
                   builder: (context, innerSetState) => TextButton(
                     onPressed: isCreating
@@ -156,10 +181,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
 
                       innerSetState(() => isCreating = true);
 
-                      final finalPath = imagePath ?? (await copyAssetToTempFile(
-                        'assets/images/default_category.png',
-                        'default_category.png',
-                      )).path;
+                      final finalPath = imagePath ??
+                          (await copyAssetToTempFile(
+                            'assets/images/default_category.png',
+                            'default_category.png',
+                          )).path;
 
                       await ApiService.createCategory(
                         title: titleController.text,
@@ -187,9 +213,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                         ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                        : const Text('Adaugă'),
+                        : const Text('Adaugă', style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
@@ -199,7 +225,6 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
       );
     });
   }
-
 
 
 
@@ -217,62 +242,6 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
     });
   }
 
-  void _showEditCategoryDialog(Category category, int index) async {
-    final TextEditingController titleController = TextEditingController(text: category.title);
-    bool isVisible = category.visible;
-
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setInnerState) => AlertDialog(
-          title: const Text('Editează categorie'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Titlu categorie'),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Text("Vizibilă"),
-                  Switch(
-                    value: isVisible,
-                    onChanged: (value) {
-                      setInnerState(() => isVisible = value);
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Anulează"),
-            ),
-            TextButton(
-              onPressed: () async {
-                // TODO: Trimite modificările la backend
-                setState(() {
-                  categories[index] = Category(
-                    id: category.id,
-                    title: titleController.text,
-                    imageUrl: category.imageUrl,
-                    visible: isVisible,
-                    order: category.order,
-                  );
-                });
-                Navigator.pop(context);
-              },
-              child: const Text("Salvează"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _editCategory(int index) async {
     final cat = categories[index];
@@ -284,16 +253,39 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Editează categoria'),
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Editează categoria',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(labelText: 'Titlu'),
+                style: const TextStyle(color: Colors.white),
+                cursorColor: Colors.white, // <- cursor alb
+                decoration: InputDecoration(
+                  labelText: 'Titlu',
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.blue), // border albastru când e activ
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.white30), // border alb semi-opac când e inactiv
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white, // <- icon + text alb
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
                 onPressed: () async {
                   FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
@@ -303,17 +295,16 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                 icon: const Icon(Icons.image),
                 label: const Text('Alege imagine'),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  const Text('Vizibil în meniu'),
+                  const Text('Vizibil în meniu', style: TextStyle(color: Colors.white)),
                   const Spacer(),
                   StatefulBuilder(
                     builder: (context, setInnerState) => Switch(
                       value: isVisible,
-                      onChanged: (val) {
-                        setInnerState(() => isVisible = val);
-                      },
+                      activeColor: Colors.blue,
+                      onChanged: (val) => setInnerState(() => isVisible = val),
                     ),
                   ),
                 ],
@@ -329,12 +320,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                   imagePath: imagePath,
                   visible: isVisible,
                   order: cat.order,
-
                 );
                 await _loadCategories();
                 Navigator.of(context).pop();
               },
-              child: const Text('Salvează'),
+              child: const Text('Salvează', style: TextStyle(color: Colors.white)),
             ),
             TextButton(
               onPressed: () async {
@@ -365,16 +355,36 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
             bool isCreating = false;
 
             return AlertDialog(
-              title: const Text('Adaugă subcategorie'),
+              backgroundColor: Colors.grey[900],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Adaugă subcategorie', style: TextStyle(color: Colors.white)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Titlu'),
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      labelText: 'Titlu',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white30),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                     onPressed: () async {
                       FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                       if (result != null) {
@@ -386,13 +396,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                     icon: const Icon(Icons.image),
                     label: const Text('Alege imagine'),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Vizibil în meniu'),
+                      const Text('Vizibil în meniu', style: TextStyle(color: Colors.white)),
                       const Spacer(),
                       Switch(
                         value: isVisible,
+                        activeColor: Colors.blue,
                         onChanged: (val) => setInnerState(() => isVisible = val),
                       ),
                     ],
@@ -431,9 +442,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                         ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                        : const Text('Adaugă'),
+                        : const Text('Adaugă', style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
@@ -453,17 +464,37 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Editează subcategorie'),
+        backgroundColor: Colors.grey[900],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Editează subcategorie', style: TextStyle(color: Colors.white)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(labelText: 'Titlu'),
+                style: const TextStyle(color: Colors.white),
+                cursorColor: Colors.white,
+                decoration: InputDecoration(
+                  labelText: 'Titlu',
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.blue),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.white30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
                 onPressed: () async {
                   FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null) {
@@ -473,19 +504,16 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                 icon: const Icon(Icons.image),
                 label: const Text('Schimbă imagine'),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  const Text('Vizibil în meniu'),
+                  const Text('Vizibil în meniu', style: TextStyle(color: Colors.white)),
                   const Spacer(),
                   StatefulBuilder(
                     builder: (context, setInnerState) => Switch(
                       value: isVisible,
-                      onChanged: (val) {
-                        setInnerState(() {
-                          isVisible = val;
-                        });
-                      },
+                      activeColor: Colors.blue,
+                      onChanged: (val) => setInnerState(() => isVisible = val),
                     ),
                   ),
                 ],
@@ -507,7 +535,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
               await _loadSubcategories(categoryId);
               Navigator.pop(context);
             },
-            child: const Text('Salvează'),
+            child: const Text('Salvează', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -548,6 +576,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
             pinned: true,
             expandedHeight: 200,
             backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: FlexibleSpaceBar(
               title: GestureDetector(
                 onLongPress: _editRestaurantName,
@@ -668,12 +697,20 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text('Confirmare ștergere'),
-                            content: const Text('Ești sigur că vrei să ștergi această subcategorie?'),
+                            backgroundColor: Colors.grey[900],
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text(
+                              'Confirmare ștergere',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            content: const Text(
+                              'Ești sigur că vrei să ștergi această subcategorie?',
+                              style: TextStyle(color: Colors.white70),
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(false),
-                                child: const Text('Anulează'),
+                                child: const Text('Anulează', style: TextStyle(color: Colors.white)),
                               ),
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(true),
@@ -826,13 +863,15 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Alege acțiunea'),
+                  backgroundColor: Colors.grey[900],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('Alege acțiunea', style: TextStyle(color: Colors.white)),
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.edit),
-                        title: const Text('Editează'),
+                        leading: const Icon(Icons.edit, color: Colors.white),
+                        title: const Text('Editează', style: TextStyle(color: Colors.white)),
                         onTap: () {
                           Navigator.pop(context);
                           _editCategory(index);
@@ -840,11 +879,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                       ),
                       if (categories.length > 1)
                         ListTile(
-                        leading: const Icon(Icons.swap_vert),
-                        title: const Text('Reordonează'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _toggleReorderMode();
+                          leading: const Icon(Icons.swap_vert, color: Colors.white),
+                          title: const Text('Reordonează', style: TextStyle(color: Colors.white)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _toggleReorderMode();
                         },
                       ),
                     ],
@@ -959,15 +998,33 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Modifică numele restaurantului'),
+        backgroundColor: Colors.grey[900],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Modifică numele restaurantului',
+          style: TextStyle(color: Colors.white),
+        ),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: 'Nume'),
+          style: const TextStyle(color: Colors.white),
+          cursorColor: Colors.white,
+          decoration: InputDecoration(
+            labelText: 'Nume',
+            labelStyle: const TextStyle(color: Colors.white70),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.blue),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.white30),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Anulează'),
+            child: const Text('Anulează', style: TextStyle(color: Colors.white)),
           ),
           TextButton(
             onPressed: () async {
@@ -981,7 +1038,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                 debugPrint('Eroare la actualizare nume: $e');
               }
             },
-            child: const Text('Salvează'),
+            child: const Text('Salvează', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
