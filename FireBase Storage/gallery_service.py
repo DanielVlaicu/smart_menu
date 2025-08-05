@@ -94,59 +94,69 @@ def delete_blob_if_exists(path: str) -> None:
         pass
 
 
-
 @router.post("/initialize")
-def initialize_user(uid: str = Depends(get_current_uid)):
+def initialize_user(
+    uid: str = Depends(get_current_uid),
+    category_file: UploadFile = File(...),
+    subcategory_file: UploadFile = File(...),
+    product_file: UploadFile = File(...),
+):
     db = get_firestore()
     user_ref = db.collection("users").document(uid)
     existing = user_ref.get().to_dict()
     if existing and existing.get("initialized") == True:
         return {"message": "Deja inițializat"}
 
-    # Categorie inițială
+    # 🖼 Încarcă imaginile implicite din fișierele trimise
+    category_image_url, _ = upload_image(uid, category_file.file, category_file.filename, folder="categories")
+    subcategory_image_url, _ = upload_image(uid, subcategory_file.file, subcategory_file.filename, folder="categories/default/subcategories")
+    product_image_url, _ = upload_image(uid, product_file.file, product_file.filename, folder="categories/default/subcategories/default/products")
+
+    # 🧾 Creează categoria inițială
     category_ref = user_ref.collection("categories").document()
     category_ref.set({
         "name": "Food",
-        "imageUrl": "",
+        "imageUrl": category_image_url,
         "visible": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
         "protected": True,
-        "order": 0  # ✅
+        "order": 0
     })
 
-    # Subcategorie inițială
+    # ➕ Creează subcategoria inițială
     subcategory_ref = category_ref.collection("subcategories").document()
     subcategory_ref.set({
         "name": "Starter rece",
-        "imageUrl": "",
+        "imageUrl": subcategory_image_url,
         "visible": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
         "protected": True,
-        "order": 0  # ✅
+        "order": 0
     })
 
-    # Produs inițial
+    # 🍽 Creează produsul inițial
     subcategory_ref.collection("products").document().set({
         "name": "Crochete",
         "price": 0.0,
         "description": "Produs implicit",
         "weight": "",
         "allergens": "",
-        "imageUrl": "",
+        "imageUrl": product_image_url,
         "visible": True,
         "createdAt": firestore.SERVER_TIMESTAMP,
         "protected": True,
-        "order": 0  # ✅
+        "order": 0
     })
-    # 🆕 Branding implicit
+
+    # 🆕 Branding implicit (fără imagine de antet pentru început)
     user_ref.set({
         "initialized": True,
         "restaurant_name": "Meniu",
         "headerImageUrl": ""
     }, merge=True)
 
-    user_ref.set({"initialized": True}, merge=True)
     return {"message": "User initialized cu structura default"}
+
 
 # ------------------ NUMELE RESTAURANTULUI SI POZA BACKGROUND ------------------
 
