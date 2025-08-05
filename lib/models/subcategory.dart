@@ -21,7 +21,7 @@ class Subcategory {
     imageUrl: json['image_url'],
     visible: json['visible'],
     categoryId: json['category_id'],
-      order: json['order'] ?? 0,
+    order: json['order'] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,6 +20,11 @@ class QRGeneratorScreen extends StatelessWidget {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
     const size = Size(300, 300);
+
+     // Desenează fundal alb
+    final paint = Paint()..color = Colors.white;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+
 
     final qrPainter = QrPainter(
       data: qrData,
@@ -62,6 +68,12 @@ class QRGeneratorScreen extends StatelessWidget {
     final pdf = pw.Document();
     pdf.addPage(
       pw.Page(
+        pageTheme: pw.PageTheme(
+          buildBackground: (context) => pw.FullPage(
+            ignoreMargins: true,
+            child: pw.Container(color: PdfColors.white),
+          ),
+        ),
         build: (pw.Context context) => pw.Center(
           child: pw.Image(pw.MemoryImage(qrImage!.buffer.asUint8List())),
         ),

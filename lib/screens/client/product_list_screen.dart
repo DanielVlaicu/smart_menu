@@ -17,7 +17,14 @@ class ProductListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: Text(subcategory), backgroundColor: Colors.black),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Text(
+          subcategory,
+          style: const TextStyle(color: Colors.white), // culoarea textului sus
+        ),
+        iconTheme: const IconThemeData(color: Colors.white), // culoarea butonului back
+      ),
       body: ListView.builder(
         itemCount: products.length,
         itemBuilder: (context, index) {
