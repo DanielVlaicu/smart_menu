@@ -29,6 +29,8 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
   String _backgroundImageUrl = '';
   final ButtonDebouncer _addCategoryDebouncer = ButtonDebouncer();
   final ButtonDebouncer _addSubcategoryDebouncer = ButtonDebouncer();
+  final ButtonDebouncer _saveCategoryDebouncer = ButtonDebouncer();
+  final ButtonDebouncer _saveSubcategoryDebouncer = ButtonDebouncer();
 
   @override
   void initState() {
@@ -313,16 +315,18 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
           ),
           actions: [
             TextButton(
-              onPressed: () async {
-                await ApiService.updateCategory(
-                  id: cat.id,
-                  title: titleController.text,
-                  imagePath: imagePath,
-                  visible: isVisible,
-                  order: cat.order,
-                );
-                await _loadCategories();
-                Navigator.of(context).pop();
+              onPressed: () {
+                _saveCategoryDebouncer.run(() async {
+                  await ApiService.updateCategory(
+                    id: cat.id,
+                    title: titleController.text,
+                    imagePath: imagePath,
+                    visible: isVisible,
+                    order: cat.order,
+                  );
+                  await _loadCategories();
+                  if (context.mounted) Navigator.of(context).pop();
+                });
               },
               child: const Text('Salvează', style: TextStyle(color: Colors.white)),
             ),
@@ -523,17 +527,19 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
         ),
         actions: [
           TextButton(
-            onPressed: () async {
-              await ApiService.updateSubcategory(
-                id: subcategory.id,
-                title: titleController.text,
-                imagePath: imagePath,
-                visible: isVisible,
-                categoryId: categoryId,
-                order: subcategory.order,
-              );
-              await _loadSubcategories(categoryId);
-              Navigator.pop(context);
+            onPressed: () {
+              _saveSubcategoryDebouncer.run(() async {
+                await ApiService.updateSubcategory(
+                  id: subcategory.id,
+                  title: titleController.text,
+                  imagePath: imagePath,
+                  visible: isVisible,
+                  categoryId: categoryId,
+                  order: subcategory.order,
+                );
+                await _loadSubcategories(categoryId);
+                if (context.mounted) Navigator.pop(context);
+              });
             },
             child: const Text('Salvează', style: TextStyle(color: Colors.white)),
           ),
