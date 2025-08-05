@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -40,6 +41,36 @@ class ApiService {
       return data['url'];
     } else {
       throw Exception('Eroare la upload imagine');
+    }
+  }
+
+
+  ///initialiare  categorii subcategorii si produse (primele cand isi creeaza cont)
+
+  static Future<void> initializeUser() async {
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+
+    // Încarcă fișierele din assets ca MultipartFile
+    Future<http.MultipartFile> loadAsset(String path, String field) async {
+      final byteData = await rootBundle.load(path);
+      final file = http.MultipartFile.fromBytes(
+        field,
+        byteData.buffer.asUint8List(),
+        filename: path.split('/').last,
+      );
+      return file;
+    }
+
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/initialize'))
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(await loadAsset('lib/assets/images/default_category.png', 'category_file'))
+      ..files.add(await loadAsset('lib/assets/images/default_subcategory.png', 'subcategory_file'))
+      ..files.add(await loadAsset('lib/assets/images/default_product.png', 'product_file'));
+
+    final response = await request.send();
+    if (response.statusCode != 200) {
+      final respStr = await response.stream.bytesToString();
+      throw Exception('Eroare la initialize: $respStr');
     }
   }
 

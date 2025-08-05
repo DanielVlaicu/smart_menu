@@ -35,6 +35,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
     super.initState();
     _loadBranding();
     _loadCategories();
+
   }
 
   Future<File> copyAssetToTempFile(String assetPath, String fileName) async {
@@ -189,22 +190,8 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
   }
 
 
-  void _reorderCategories(int oldIndex, int newIndex) async {
-    setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
-      final item = categories.removeAt(oldIndex);
-      categories.insert(newIndex, item);
-    });
 
-    for (int i = 0; i < categories.length; i++) {
-      await ApiService.updateCategoryOrder(
-        id: categories[i].id,
-        title: categories[i].title,
-        visible: categories[i].visible,
-        order: i,
-      );
-    }
-  }
+
 
 
   Future<void> _saveCategoryOrder() async {

@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_menu/screens/client/menu_screen2.dart';
 import 'package:smart_menu/screens/manager/account_settings_screen.dart';
 import 'package:smart_menu/screens/manager/manager_menu_screen.dart';
 import 'package:smart_menu/screens/manager/menu_settings_screen.dart';
@@ -10,7 +9,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/manager/dashboard_screen.dart';
 
-import 'screens/manager/edit_item_screen.dart';
+
 import 'screens/manager/analytics_screen.dart';
 import 'screens/manager/settings_screen.dart';
 import 'screens/client/menu_screen.dart';
@@ -87,8 +86,6 @@ class RestaurantMenuApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => DashboardScreen());
           case '/manager_menu_screen':
             return MaterialPageRoute(builder: (_) => ManagerMenuScreen());
-          case '/edit_item':
-            return MaterialPageRoute(builder: (_) => EditItemScreen());
           case '/analytics':
             return MaterialPageRoute(builder: (_) => AnalyticsScreen());
           case '/settings':
@@ -98,8 +95,6 @@ class RestaurantMenuApp extends StatelessWidget {
           case '/menu_settings':
             return MaterialPageRoute(builder: (_) => const MenuSettingsScreen());
           case '/menu2':
-            return MaterialPageRoute(builder: (_) => const ClientMenuScreen2());
-          case '/qr':
             final uid = settings.arguments as String;
             return MaterialPageRoute(builder: (_) => QRGeneratorScreen(uid: uid));
           case '/menu':

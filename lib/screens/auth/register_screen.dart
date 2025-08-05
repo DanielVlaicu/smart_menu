@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:smart_menu/services/auth_service.dart';
 
+import '../../services/api_services.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -37,6 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (result == 'success') {
+      await ApiService.initializeUser();
       if (!mounted) return;
       showDialog(
         context: context,
