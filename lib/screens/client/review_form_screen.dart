@@ -29,19 +29,25 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
     final source = await showDialog<ImageSource>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Selectează sursa'),
+        backgroundColor: Colors.black,
+        title: const Text(
+          'Selectează sursa',
+          style: TextStyle(color: Colors.white),
+        ),
+        contentTextStyle: const TextStyle(color: Colors.white),
         actions: [
           TextButton.icon(
-            icon: const Icon(Icons.photo),
-            label: const Text('Galerie'),
+            icon: const Icon(Icons.photo, color: Colors.white),
+            label: const Text('Galerie', style: TextStyle(color: Colors.white)),
             onPressed: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
           TextButton.icon(
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Cameră'),
+            icon: const Icon(Icons.camera_alt, color: Colors.white),
+            label: const Text('Cameră', style: TextStyle(color: Colors.white)),
             onPressed: () => Navigator.pop(ctx, ImageSource.camera),
           ),
         ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
 
@@ -157,10 +163,16 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
                 value == null || value.trim().isEmpty ? 'Introdu un mesaj' : null,
               ),
               const SizedBox(height: 10),
-              if (_selectedImage != null)
+              if (!kIsWeb && _selectedImage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Image.file(_selectedImage!, height: 150),
+                ),
+
+              if (kIsWeb && _webImageBytes != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Image.memory(_webImageBytes!, height: 150),
                 ),
               TextButton.icon(
                 icon: const Icon(Icons.image, color: Colors.white),
