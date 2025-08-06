@@ -702,8 +702,9 @@ def submit_review(
         raise HTTPException(status_code=400, detail="Mesaj prea scurt.")
 
     # (opțional) validează tipul fișierului
-    if file and (file.content_type not in {"image/jpeg", "image/png", "image/webp"}):
-        raise HTTPException(status_code=400, detail="Imaginea trebuie să fie JPG/PNG/WEBP.")
+    if file:
+        if not file.content_type or not any(t in file.content_type for t in ["jpeg", "png", "webp"]):
+            raise HTTPException(status_code=400, detail="Imaginea trebuie să fie JPG/PNG/WEBP.")
 
     db = get_firestore()
     reviews_ref = db.collection("users").document(uid).collection("reviews")
