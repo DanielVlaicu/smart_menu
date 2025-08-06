@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/api_services.dart';
+import 'package:flutter/foundation.dart';
 
 class ReviewFormScreen extends StatefulWidget {
   final String restaurantUid;
@@ -19,13 +20,47 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
   File? _selectedImage;
   bool _loading = false;
 
+  XFile? _webPickedFile;
+  Uint8List? _webImageBytes;
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Selectează sursa'),
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.photo),
+            label: const Text('Galerie'),
+            onPressed: () => Navigator.pop(ctx, ImageSource.gallery),
+          ),
+          TextButton.icon(
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Cameră'),
+            onPressed: () => Navigator.pop(ctx, ImageSource.camera),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return;
+
+    final picked = await picker.pickImage(source: source);
+
     if (picked != null) {
-      setState(() {
-        _selectedImage = File(picked.path);
-      });
+      if (kIsWeb) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _webPickedFile = picked;
+          _webImageBytes = bytes;
+        });
+      } else {
+        setState(() {
+          _selectedImage = File(picked.path);
+        });
+      }
     }
   }
 
@@ -50,7 +85,9 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         message: _messageController.text.trim(),
-        imageFile: _selectedImage,
+        imageFile: kIsWeb ? null : _selectedImage,
+        webImageBytes: kIsWeb ? _webImageBytes : null,
+        webImageName: kIsWeb ? _webPickedFile?.name : null,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -102,13 +139,13 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
               TextFormField(
                 controller: _emailController,
                 style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Email (opțional)'),
+                decoration: _inputDecoration('Email'),
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _phoneController,
                 style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Telefon (opțional)'),
+                decoration: _inputDecoration('Telefon'),
               ),
               const SizedBox(height: 10),
               TextFormField(

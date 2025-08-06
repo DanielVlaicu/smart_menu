@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -508,35 +509,48 @@ class ApiService {
     String? email,
     String? phone,
     required String message,
-    String? imagePath,
-    File? imageFile,
+    File? imageFile, // pentru mobil
+    Uint8List? webImageBytes, // pentru web
+    String? webImageName,
   }) async {
-    final req = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/public-menu/$restaurantUid/reviews'),
-    );
+    final uri = Uri.parse('$baseUrl/public-menu/$restaurantUid/reviews');
+    final request = http.MultipartRequest('POST', uri);
 
-    if (email != null && email.isNotEmpty) req.fields['email'] = email;
-    if (phone != null && phone.isNotEmpty) req.fields['phone'] = phone;
-    req.fields['message'] = message;
+    if (email != null && email.isNotEmpty) request.fields['email'] = email;
+    if (phone != null && phone.isNotEmpty) request.fields['phone'] = phone;
+    request.fields['message'] = message;
 
-    if (imageFile != null) {
-      req.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          imageFile.path,
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      );
+    if (kIsWeb) {
+      if (webImageBytes != null && webImageName != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            webImageBytes,
+            filename: webImageName,
+            contentType: MediaType('image', 'jpeg'), // sau dedus din extensie
+          ),
+        );
+      }
+    } else {
+      if (imageFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'file',
+            imageFile.path,
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
+      }
     }
 
-    final resp = await req.send();
-    final body = await resp.stream.bytesToString();
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
 
-    if (resp.statusCode != 200) {
+    if (response.statusCode != 200) {
       throw Exception('Eroare la trimiterea review-ului: $body');
     }
   }
+
 
   static Future<List<Map<String, dynamic>>> getReviews() async {
     final headers = await _authHeaders();
