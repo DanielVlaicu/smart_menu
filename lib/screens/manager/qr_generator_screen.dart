@@ -21,12 +21,12 @@ class QRGeneratorScreen extends StatelessWidget {
   Future<File> _generatePngFile() async {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
-    const size = Size(300, 300);
+    const double dimension = 1024; // rezoluție mare
+    const size = Size(dimension, dimension);
 
-     // Desenează fundal alb
+    // Fundal alb
     final paint = Paint()..color = Colors.white;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
-
 
     final qrPainter = QrPainter(
       data: qrData,
@@ -36,12 +36,12 @@ class QRGeneratorScreen extends StatelessWidget {
 
     qrPainter.paint(canvas, size);
     final picture = recorder.endRecording();
-    final img = await picture.toImage(300, 300);
+    final img = await picture.toImage(dimension.toInt(), dimension.toInt());
     final byteData = await img.toByteData(format: ImageByteFormat.png);
     final pngBytes = byteData!.buffer.asUint8List();
 
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/qr_code.png');
+    final file = File('${dir.path}/qr_code_hd.png'); // nume schimbat pt claritate
     await file.writeAsBytes(pngBytes);
     return file;
   }
