@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:smart_menu/utils/button_debouncer.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../../models/category.dart';
 import '../../models/subcategory.dart';
@@ -31,6 +33,7 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
   final ButtonDebouncer _addSubcategoryDebouncer = ButtonDebouncer();
   final ButtonDebouncer _saveCategoryDebouncer = ButtonDebouncer();
   final ButtonDebouncer _saveSubcategoryDebouncer = ButtonDebouncer();
+  Color _restaurantNameColor = Colors.white;
 
   @override
   void initState() {
@@ -58,6 +61,9 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
       setState(() {
         _restaurantName = data['restaurant_name'] ?? 'Nume restaurant';
         _backgroundImageUrl = data['header_image_url'] ?? '';
+        _restaurantNameColor = data['restaurant_name_color'] != null
+            ? Color(int.parse('0xff${data['restaurant_name_color'].toString().replaceAll('#', '')}'))
+            : Colors.white;
       });
     } catch (e) {
       debugPrint('Eroare la branding: $e');
@@ -74,6 +80,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
         categories = result.map((e) => Category.fromJson(e)).toList();
         // 🛠 Resetăm indexul să fie sigur valid
         selectedCategoryIndex = 0;
+        for (final cat in categories) {
+          if (cat.imageUrl.isNotEmpty && !cat.imageUrl.startsWith('/')) {
+            precacheImage(CachedNetworkImageProvider(cat.imageUrl), context);
+          }
+        }
       });
 
       if (categories.isNotEmpty) {
@@ -95,6 +106,11 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
       final result = await ApiService.getSubcategories(categoryId);
       setState(() {
         currentSubcategories = result.map((e) => Subcategory.fromJson(e)).toList();
+        for (final sub in currentSubcategories) {
+          if (sub.imageUrl.isNotEmpty && !sub.imageUrl.startsWith('/')) {
+            precacheImage(CachedNetworkImageProvider(sub.imageUrl), context);
+          }
+        }
       });
     } catch (e) {
       print('Eroare la subcategorii: \$e');
@@ -592,17 +608,17 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                 onLongPress: _editRestaurantName,
                 child: Text(
                   _restaurantName,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: _restaurantNameColor),
                 ),
               ),
               background: GestureDetector(
                 onLongPress: _editRestaurantBackground,
                 child: _backgroundImageUrl.isEmpty
                     ? Container(color: Colors.grey)
-                    : Image.network(
-                  _backgroundImageUrl,
+                    : CachedNetworkImage(
+                  imageUrl: _backgroundImageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, _, __) => Container(color: Colors.grey),
+                  errorWidget: (context, _, __) => Container(color: Colors.grey),
                 ),
               ),
             ),
@@ -768,12 +784,17 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              Image.network(
-                                item.imageUrl,
+                              CachedNetworkImage(
+                                imageUrl: item.imageUrl,
                                 width: double.infinity,
                                 height: 160,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
+                                placeholder: (_, __) => Container(
+                                  color: Colors.grey[800],
+                                  height: 160,
+                                  child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                                ),
+                                errorWidget: (_, __, ___) => Container(
                                   color: Colors.grey,
                                   height: 160,
                                   child: const Center(child: Icon(Icons.broken_image)),
@@ -914,12 +935,13 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      category.imageUrl,
+                    child:
+                    CachedNetworkImage(
+                      imageUrl: category.imageUrl,
                       width: 40,
                       height: 40,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
+                      errorWidget: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -978,12 +1000,13 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      categories[index].imageUrl,
+                    child:
+                    CachedNetworkImage(
+                      imageUrl: categories[index].imageUrl,
                       width: 40,
                       height: 40,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
+                      errorWidget: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1005,53 +1028,75 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
 
   void _editRestaurantName() async {
     final controller = TextEditingController(text: _restaurantName);
+    Color selectedColor = _restaurantNameColor;
 
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Modifică numele restaurantului',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: TextField(
-          controller: controller,
-          style: const TextStyle(color: Colors.white),
-          cursorColor: Colors.white,
-          decoration: InputDecoration(
-            labelText: 'Nume',
-            labelStyle: const TextStyle(color: Colors.white70),
-            focusedBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Colors.blue),
-              borderRadius: BorderRadius.circular(8),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setInnerState) {
+          return AlertDialog(
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+              'Modifică numele restaurantului',
+              style: TextStyle(color: Colors.white),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Colors.white30),
-              borderRadius: BorderRadius.circular(8),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controller,
+                  style: TextStyle(color: selectedColor),
+                  cursorColor: selectedColor,
+                  decoration: InputDecoration(
+                    labelText: 'Nume',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: selectedColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white30),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ColorPicker(
+                  pickerColor: selectedColor,
+                  onColorChanged: (color) => setInnerState(() => selectedColor = color),
+                  enableAlpha: false,
+                  showLabel: false,
+                  pickerAreaHeightPercent: 0.6,
+                ),
+              ],
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Anulează', style: TextStyle(color: Colors.white)),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                final data = await ApiService.updateBranding(name: controller.text);
-                setState(() {
-                  _restaurantName = data['restaurant_name'];
-                });
-              } catch (e) {
-                debugPrint('Eroare la actualizare nume: $e');
-              }
-            },
-            child: const Text('Salvează', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Anulează', style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  try {
+                    final data = await ApiService.updateBranding(
+                      name: controller.text,
+                      nameColor: '#${selectedColor.value.toRadixString(16).substring(2)}',
+                    );
+                    setState(() {
+                      _restaurantName = data['restaurant_name'];
+                      _restaurantNameColor = selectedColor;
+                    });
+                  } catch (e) {
+                    debugPrint('Eroare la actualizare nume: $e');
+                  }
+                },
+                child: const Text('Salvează', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

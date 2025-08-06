@@ -475,6 +475,7 @@ class ApiService {
   static Future<Map<String, dynamic>> updateBranding({
     String? name,
     String? imagePath,
+    String? nameColor, // ✅ nou parametru
   }) async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null) throw Exception("Utilizator neautentificat");
@@ -483,6 +484,11 @@ class ApiService {
       ..headers['Authorization'] = 'Bearer $token';
 
     if (name != null) req.fields['name'] = name;
+
+    if (nameColor != null && nameColor.isNotEmpty) {
+      req.fields['name_color'] = nameColor; // ✅ cheie folosită în backend
+    }
+
     if (imagePath != null && imagePath.isNotEmpty) {
       req.files.add(await http.MultipartFile.fromPath('file', imagePath));
     }

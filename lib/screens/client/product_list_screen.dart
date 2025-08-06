@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'image_fullscreen_view.dart';
 
@@ -61,17 +62,30 @@ class ProductListScreen extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: hasImage
-            ? Image.network(
-          imageUrl,
+            ? CachedNetworkImage(
+          imageUrl: imageUrl,
           width: 120,
           height: 120,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _imageFallback(),
+          placeholder: (_, __) => _imagePlaceholder(),
+          errorWidget: (_, __, ___) => _imageFallback(),
         )
             : _imageFallback(),
       ),
     );
   }
+
+  Widget _imagePlaceholder() {
+    return Container(
+      width: 120,
+      height: 120,
+      color: Colors.grey[800],
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+      ),
+    );
+  }
+
 
   Widget _imageFallback() {
     return Container(

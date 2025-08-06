@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:file_picker/file_picker.dart';
 
 class QRGeneratorScreen extends StatelessWidget {
   final String uid;
@@ -57,8 +58,8 @@ class QRGeneratorScreen extends StatelessWidget {
   }
 
   Future<void> _saveAsPdf(BuildContext context) async {
-    final status = await Permission.storage.request();
-    if (!status.isGranted) return;
+    final permission = await Permission.storage.request();
+    if (!permission.isGranted) return;
 
     final qrImage = await QrPainter(
       data: qrData,
@@ -81,8 +82,17 @@ class QRGeneratorScreen extends StatelessWidget {
       ),
     );
 
-    final dir = await getExternalStorageDirectory();
-    final file = File('${dir!.path}/qr_code.pdf');
+    //  Alege locația de salvare
+    String? outputPath = await FilePicker.platform.saveFile(
+      dialogTitle: 'Salvează codul QR ca PDF',
+      fileName: 'qr_code.pdf',
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (outputPath == null) return; // utilizatorul a anulat
+
+    final file = File(outputPath);
     await file.writeAsBytes(await pdf.save());
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +132,7 @@ class QRGeneratorScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _buildButton(context, Icons.image_outlined, 'Salvează ca PNG', () => _saveAsPng(context)),
               const SizedBox(height: 12),
-              _buildButton(context, Icons.share, 'Partajează Codul', () => _shareQrCode(context)),
+              _buildButton(context, Icons.share, 'Partajează', () => _showShareOptions(context)),
             ],
           ),
         ),
@@ -143,4 +153,46 @@ class QRGeneratorScreen extends StatelessWidget {
       ),
     );
   }
+  void _showShareOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.qr_code, color: Colors.white),
+              title: const Text('Partajează cod QR', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _shareQrCode(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.link, color: Colors.white),
+              title: const Text('Partajează ca link', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _shareLink(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _shareLink(BuildContext context) async {
+    await Share.share(
+      'Accesează meniul: $qrData',
+      subject: 'Meniul meu digital',
+    );
+
+  }
+
+
 }

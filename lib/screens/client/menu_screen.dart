@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'product_list_screen.dart';
 import 'review_form_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ClientMenuScreen extends StatefulWidget {
   final String uid;
@@ -18,7 +19,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
   bool loading = true;
   String restaurantName = "Meniu";
   String headerImageUrl = '';
-
+  Color restaurantNameColor = Colors.white;
 
   @override
   void initState() {
@@ -36,6 +37,9 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
         setState(() {
           restaurantName = data['restaurant_name'] ?? "Meniu";
           headerImageUrl = data['header_image_url'] ?? '';
+          restaurantNameColor = data['restaurant_name_color'] != null
+              ? Color(int.parse('0xff${data['restaurant_name_color'].toString().replaceAll("#", "")}'))
+              : Colors.white;
           categories = (data['categories'] as List<dynamic>? ?? [])
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
@@ -47,6 +51,21 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
           }
           loading = false;
         });
+        // Preîncarcă imaginile
+        for (final category in categories) {
+          final imageUrl = category['image_url'];
+          if (imageUrl != null && imageUrl.toString().isNotEmpty && !imageUrl.toString().startsWith('/')) {
+            precacheImage(CachedNetworkImageProvider(imageUrl), context);
+          }
+
+          final subs = category['subcategories'] as List<dynamic>? ?? [];
+          for (final sub in subs) {
+            final subImage = sub['image_url'];
+            if (subImage != null && subImage.toString().isNotEmpty && !subImage.toString().startsWith('/')) {
+              precacheImage(CachedNetworkImageProvider(subImage), context);
+            }
+          }
+        }
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
@@ -108,17 +127,22 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(restaurantName, style: const TextStyle(color: Colors.white)),
-              background: Image.network(
-                headerImageUrl.isNotEmpty
+              title: Text(
+                restaurantName,
+                style: TextStyle(color: restaurantNameColor),
+              ),
+              background: CachedNetworkImage(
+                imageUrl: headerImageUrl.isNotEmpty
                     ? headerImageUrl
                     : 'https://images.pexels.com/photos/6267/menu-restaurant-vintage-table.jpg?auto=compress&cs=tinysrgb&h=500',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorWidget: (_, __, ___) => Container(
                   color: Colors.grey[800],
-                  child: const Center(
-                    child: Icon(Icons.broken_image, color: Colors.white),
-                  ),
+                  child: const Center(child: Icon(Icons.broken_image, color: Colors.white)),
+                ),
+                placeholder: (_, __) => Container(
+                  color: Colors.grey[800],
+                  child: const Center(child: CircularProgressIndicator(color: Colors.white)),
                 ),
               ),
             ),
@@ -126,6 +150,7 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
           SliverPersistentHeader(
             pinned: true,
             delegate: _ClientCategoryHeaderDelegate(
+
               categories: categories,
               selectedIndex: selectedCategoryIndex,
               onCategorySelected: (index) => setState(() => selectedCategoryIndex = index),
@@ -160,18 +185,20 @@ class _ClientMenuScreenState extends State<ClientMenuScreen> {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          Image.network(
-                            (item['image_url']?.isNotEmpty ?? false)
+                          CachedNetworkImage(
+                            imageUrl: (item['image_url']?.isNotEmpty ?? false)
                                 ? item['image_url']
                                 : 'https://via.placeholder.com/300x160?text=Fără+imagine',
                             height: 160,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 160,
-                              width: double.infinity,
+                            errorWidget: (_, __, ___) => Container(
                               color: Colors.grey[800],
                               child: const Center(child: Icon(Icons.broken_image, color: Colors.white)),
+                            ),
+                            placeholder: (_, __) => Container(
+                              color: Colors.grey[800],
+                              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
                             ),
                           ),
                           Container(
@@ -237,14 +264,19 @@ class _ClientCategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: Image.network(
-                        (category['image_url']?.isNotEmpty ?? false)
+                      child: CachedNetworkImage(
+                        imageUrl: (category['image_url']?.isNotEmpty ?? false)
                             ? category['image_url']
                             : 'https://via.placeholder.com/150?text=Fără+imagine',
                         width: 40,
                         height: 40,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
+                        errorWidget: (_, __, ___) => const Icon(Icons.image, color: Colors.white),
+                        placeholder: (_, __) => const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

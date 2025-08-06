@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -61,6 +62,14 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
       setState(() {
         products = loadedProducts;
       });
+
+      // Preîncărcare imagini în cache după setState
+      for (final product in products) {
+        if (product.imageUrl.isNotEmpty && !product.imageUrl.startsWith('/')) {
+          precacheImage(CachedNetworkImageProvider(product.imageUrl), context);
+        }
+      }
+
     } catch (e) {
       print('Eroare la încărcarea produselor: \$e');
     }
@@ -670,12 +679,19 @@ class _ManagerProductListScreenState extends State<ManagerProductListScreen> wit
             height: 120,
             fit: BoxFit.cover,
           )
-              : Image.network(
-            imagePath,
+              :  CachedNetworkImage(
+            imageUrl: imagePath,
             width: 120,
             height: 120,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
+            placeholder: (context, url) => const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+            ),
+            errorWidget: (context, url, error) =>
             const Icon(Icons.image, color: Colors.white),
           ),
         ),
