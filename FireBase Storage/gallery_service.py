@@ -166,15 +166,20 @@ def get_branding(uid: str = Depends(get_current_uid)):
     user_doc = db.collection("users").document(uid).get()
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User inexistent")
+
     data = user_doc.to_dict() or {}
+
     return {
         "restaurant_name": data.get("restaurant_name", "Meniu"),
+        "restaurant_name_color": data.get("restaurant_name_color", "#ffffff"),  # ✅ adăugat
         "header_image_url": data.get("headerImageUrl", "")
     }
+
 
 @router.put("/branding")
 def update_branding(
     name: str = Form(None),
+    name_color: str = Form(None),  # ✅ nou parametru
     file: UploadFile = File(None),
     uid: str = Depends(get_current_uid)
 ):
@@ -192,6 +197,9 @@ def update_branding(
 
     if name is not None:
         update_data["restaurant_name"] = name
+
+    if name_color is not None:  # ✅ salvăm culoarea
+        update_data["restaurant_name_color"] = name_color
 
     if file is not None:
         # încarcă noua imagine
@@ -212,10 +220,13 @@ def update_branding(
     resp = {"message": "Branding actualizat"}
     if "restaurant_name" in update_data:
         resp["restaurant_name"] = update_data["restaurant_name"]
+    if "restaurant_name_color" in update_data:
+        resp["restaurant_name_color"] = update_data["restaurant_name_color"]  # ✅ trimitem culoarea
     if "headerImageUrl" in update_data:
         resp["header_image_url"] = update_data["headerImageUrl"]
 
     return resp
+
 
 
 
