@@ -608,6 +608,7 @@ def delete_product(category_id: str, subcategory_id: str, product_id: str, uid: 
         return {"message": "Produs șters"}
     raise HTTPException(status_code=404, detail="Produsul nu există")
 
+# ------------------ PENTRU CODUL QR ------------------
 
 @router.get("/public-menu/{uid}")
 def get_public_menu(uid: str):
@@ -679,9 +680,12 @@ def get_public_menu(uid: str):
     # ── Răspuns cu branding inclus ─────────────────────────────────────────────
     return {
         "restaurant_name": restaurant_name,
-        "header_image_url": header_image_url,   # ← branding
+        "header_image_url": header_image_url,
+        "restaurant_name_color": user_data.get("restaurant_name_color", "#ffffff"),
         "categories": result
     }
+
+# ------------------ REVIEWS ------------------
 
 @router.post("/public-menu/{uid}/reviews")
 def submit_review(
