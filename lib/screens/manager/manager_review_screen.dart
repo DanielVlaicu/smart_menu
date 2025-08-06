@@ -78,9 +78,31 @@ class _ManagerReviewScreenState extends State<ManagerReviewScreen> {
                   ),
                   const SizedBox(height: 10),
                   if (r['image_url'] != null && r['image_url'] != '')
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(r['image_url'], height: 160),
+                    GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.black,
+                            child: InteractiveViewer(
+                              panEnabled: true,
+                              minScale: 1,
+                              maxScale: 4,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  r['image_url'],
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(r['image_url'], height: 160),
+                      ),
                     ),
                 ],
               ),

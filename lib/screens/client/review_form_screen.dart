@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/api_services.dart';
 import 'package:flutter/foundation.dart';
@@ -22,6 +23,19 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
 
   XFile? _webPickedFile;
   Uint8List? _webImageBytes;
+
+  String? _contactError;
+
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    return emailRegex.hasMatch(email);
+  }
+
+  bool _isValidPhone(String phone) {
+    final phoneRegex = RegExp(r'^\+?[0-9]{7,15}$');
+    return phoneRegex.hasMatch(phone);
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -71,25 +85,34 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final isValid = _formKey.currentState!.validate();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
 
-    if (_emailController.text.isEmpty && _phoneController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Completează cel puțin email sau telefon'),
-        ),
-      );
-      return;
+    String? contactError;
+
+    if (email.isEmpty && phone.isEmpty) {
+      contactError = 'Completează cel puțin email sau telefon';
+    } else {
+      if (email.isNotEmpty && !_isValidEmail(email)) {
+        contactError = 'Emailul introdus nu este valid';
+      }
+      if (phone.isNotEmpty && !_isValidPhone(phone)) {
+        contactError = 'Numărul de telefon nu este valid';
+      }
     }
+
+    setState(() => _contactError = contactError);
+
+    if (!isValid || contactError != null) return;
 
     setState(() => _loading = true);
 
     try {
       await ApiService.submitPublicReview(
         restaurantUid: widget.restaurantUid,
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
+        email: email,
+        phone: phone,
         message: _messageController.text.trim(),
         imageFile: kIsWeb ? null : _selectedImage,
         webImageBytes: kIsWeb ? _webImageBytes : null,
@@ -113,6 +136,7 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
 
     setState(() => _loading = false);
   }
+
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
@@ -142,18 +166,32 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(
-                controller: _emailController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Email'),
+            TextFormField(
+            controller: _emailController,
+            onChanged: (_) => _validateContact(),
+            style: const TextStyle(color: Colors.white),
+            decoration: _inputDecoration('Email'),
+
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _phoneController,
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration('Telefon'),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                ],
               ),
               const SizedBox(height: 10),
+              if (_contactError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    _contactError!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ),
               TextFormField(
                 controller: _messageController,
                 style: const TextStyle(color: Colors.white),
@@ -199,5 +237,25 @@ class _ReviewFormScreenState extends State<ReviewFormScreen> {
         ),
       ),
     );
+  }
+
+  void _validateContact() {
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+
+    String? error;
+
+    if (email.isEmpty && phone.isEmpty) {
+      error = 'Completează cel puțin email sau telefon';
+    } else {
+      if (email.isNotEmpty && !_isValidEmail(email)) {
+        error = 'Emailul introdus nu este valid';
+      }
+      if (phone.isNotEmpty && !_isValidPhone(phone)) {
+        error = 'Numărul de telefon nu este valid';
+      }
+    }
+
+    setState(() => _contactError = error);
   }
 }

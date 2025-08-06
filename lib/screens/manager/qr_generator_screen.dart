@@ -115,6 +115,7 @@ class QRGeneratorScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Cod QR Meniu', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       backgroundColor: Colors.black,
       body: Padding(

@@ -89,14 +89,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(title: const Text('Înregistrare'), backgroundColor: Colors.black),
-          body: Padding(
+          body: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const SizedBox(height: 80),
                 const Text(
                   'Creează un cont nou',
                   style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
                 _buildTextField(controller: emailController, label: 'Email'),
