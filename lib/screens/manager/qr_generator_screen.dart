@@ -9,7 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:printing/printing.dart';
+
 
 class QRGeneratorScreen extends StatelessWidget {
   final String uid;
@@ -135,8 +135,7 @@ class QRGeneratorScreen extends StatelessWidget {
               _buildButton(context, Icons.image_outlined, 'Salvează ca PNG', () => _saveAsPng(context)),
               const SizedBox(height: 12),
               _buildButton(context, Icons.share, 'Partajează', () => _showShareOptions(context)),
-              const SizedBox(height: 12),
-              _buildButton(context, Icons.print, 'Tipărește', () => _printQrCode(context)),
+
             ],
           ),
         ),
@@ -198,32 +197,7 @@ class QRGeneratorScreen extends StatelessWidget {
 
   }
 
-  Future<void> _printQrCode(BuildContext context) async {
-    final qrImage = await QrPainter(
-      data: qrData,
-      version: QrVersions.auto,
-      gapless: true,
-    ).toImageData(1024); // rezoluție mare pentru print
 
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.Page(
-        pageTheme: pw.PageTheme(
-          buildBackground: (context) => pw.FullPage(
-            ignoreMargins: true,
-            child: pw.Container(color: PdfColors.white),
-          ),
-        ),
-        build: (pw.Context context) => pw.Center(
-          child: pw.Image(pw.MemoryImage(qrImage!.buffer.asUint8List())),
-        ),
-      ),
-    );
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
 
 
 }
