@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:smart_menu/utils/button_debouncer.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../models/category.dart';
 import '../../models/subcategory.dart';
@@ -38,9 +39,15 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
   @override
   void initState() {
     super.initState();
-    _loadBranding();
-    _loadCategories();
+    _loadInitialData();
 
+  }
+
+  Future<void> _loadInitialData() async {
+    await Future.wait([
+      _loadBranding(),
+      _loadCategories(),
+    ]);
   }
 
   Future<File> copyAssetToTempFile(String assetPath, String fileName) async {
@@ -76,15 +83,15 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
       final result = await ApiService.getCategories();
       debugPrint('Categorie response: $result');
 
-      setState(() {
-        categories = result.map((e) => Category.fromJson(e)).toList();
-        // 🛠 Resetăm indexul să fie sigur valid
-        selectedCategoryIndex = 0;
-        for (final cat in categories) {
-          if (cat.imageUrl.isNotEmpty && !cat.imageUrl.startsWith('/')) {
-            precacheImage(CachedNetworkImageProvider(cat.imageUrl), context);
-          }
+      final parsedCategories = result.map((e) => Category.fromJson(e)).toList();
+      for (final cat in parsedCategories) {
+        if (cat.imageUrl.isNotEmpty && !cat.imageUrl.startsWith('/')) {
+          await precacheImage(CachedNetworkImageProvider(cat.imageUrl), context);
         }
+      }
+      setState(() {
+        categories = parsedCategories;
+        selectedCategoryIndex = 0;
       });
 
       if (categories.isNotEmpty) {
@@ -104,14 +111,18 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
   Future<void> _loadSubcategories(String categoryId) async {
     try {
       final result = await ApiService.getSubcategories(categoryId);
-      setState(() {
-        currentSubcategories = result.map((e) => Subcategory.fromJson(e)).toList();
-        for (final sub in currentSubcategories) {
-          if (sub.imageUrl.isNotEmpty && !sub.imageUrl.startsWith('/')) {
-            precacheImage(CachedNetworkImageProvider(sub.imageUrl), context);
-          }
+
+
+      final parsedSubcategories = result.map((e) => Subcategory.fromJson(e)).toList();
+      for (final sub in parsedSubcategories) {
+        if (sub.imageUrl.isNotEmpty && !sub.imageUrl.startsWith('/')) {
+          await precacheImage(CachedNetworkImageProvider(sub.imageUrl), context);
         }
+      }
+      setState(() {
+        currentSubcategories = parsedSubcategories;
       });
+
     } catch (e) {
       print('Eroare la subcategorii: \$e');
     }
@@ -789,10 +800,14 @@ class _ManagerMenuScreenState extends State<ManagerMenuScreen> with AutoScrollOn
                                 width: double.infinity,
                                 height: 160,
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(
-                                  color: Colors.grey[800],
-                                  height: 160,
-                                  child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                                placeholder: (_, __) => Shimmer.fromColors(
+                                  baseColor: Colors.grey[800]!,
+                                  highlightColor: Colors.grey[700]!,
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 160,
+                                    color: Colors.grey[800],
+                                  ),
                                 ),
                                 errorWidget: (_, __, ___) => Container(
                                   color: Colors.grey,
